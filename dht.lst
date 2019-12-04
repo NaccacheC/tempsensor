@@ -1,0 +1,1194 @@
+   1               		.file	"dht.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               	.global	__floatunsisf
+  11               	.global	__divsf3
+  12               	.global	dht_getdata
+  14               	dht_getdata:
+  15               	.LVL0:
+  16               	.LFB7:
+  17               		.file 1 "dht.c"
+   1:dht.c         **** /*
+   2:dht.c         **** DHT Library 0x03
+   3:dht.c         **** 
+   4:dht.c         **** copyright (c) Davide Gironi, 2012
+   5:dht.c         **** 
+   6:dht.c         **** Released under GPLv3.
+   7:dht.c         **** Please refer to LICENSE file for licensing information.
+   8:dht.c         **** */
+   9:dht.c         **** 
+  10:dht.c         **** 
+  11:dht.c         **** #include <stdio.h>
+  12:dht.c         **** #include <string.h>
+  13:dht.c         **** #include <avr/io.h>
+  14:dht.c         **** #include <util/delay.h>
+  15:dht.c         **** 
+  16:dht.c         **** #include "dht.h"
+  17:dht.c         **** 
+  18:dht.c         **** /*
+  19:dht.c         ****  * get data from sensor
+  20:dht.c         ****  */
+  21:dht.c         **** #if DHT_FLOAT == 1
+  22:dht.c         **** int8_t dht_getdata(float *temperature, float *humidity) {
+  18               		.loc 1 22 57 view -0
+  19               		.cfi_startproc
+  20               		.loc 1 22 57 is_stmt 0 view .LVU1
+  21 0000 CF92      		push r12
+  22               	.LCFI0:
+  23               		.cfi_def_cfa_offset 3
+  24               		.cfi_offset 12, -2
+  25 0002 DF92      		push r13
+  26               	.LCFI1:
+  27               		.cfi_def_cfa_offset 4
+  28               		.cfi_offset 13, -3
+  29 0004 EF92      		push r14
+  30               	.LCFI2:
+  31               		.cfi_def_cfa_offset 5
+  32               		.cfi_offset 14, -4
+  33 0006 FF92      		push r15
+  34               	.LCFI3:
+  35               		.cfi_def_cfa_offset 6
+  36               		.cfi_offset 15, -5
+  37 0008 0F93      		push r16
+  38               	.LCFI4:
+  39               		.cfi_def_cfa_offset 7
+  40               		.cfi_offset 16, -6
+  41 000a 1F93      		push r17
+  42               	.LCFI5:
+  43               		.cfi_def_cfa_offset 8
+  44               		.cfi_offset 17, -7
+  45 000c CF93      		push r28
+  46               	.LCFI6:
+  47               		.cfi_def_cfa_offset 9
+  48               		.cfi_offset 28, -8
+  49 000e DF93      		push r29
+  50               	.LCFI7:
+  51               		.cfi_def_cfa_offset 10
+  52               		.cfi_offset 29, -9
+  53 0010 CDB7      		in r28,__SP_L__
+  54 0012 DEB7      		in r29,__SP_H__
+  55               	.LCFI8:
+  56               		.cfi_def_cfa_register 28
+  57 0014 2997      		sbiw r28,9
+  58               	.LCFI9:
+  59               		.cfi_def_cfa_offset 19
+  60 0016 0FB6      		in __tmp_reg__,__SREG__
+  61 0018 F894      		cli
+  62 001a DEBF      		out __SP_H__,r29
+  63 001c 0FBE      		out __SREG__,__tmp_reg__
+  64 001e CDBF      		out __SP_L__,r28
+  65               	/* prologue: function */
+  66               	/* frame size = 9 */
+  67               	/* stack size = 17 */
+  68               	.L__stack_usage = 17
+  69 0020 7C01      		movw r14,r24
+  70 0022 6B01      		movw r12,r22
+  23:dht.c         **** #elif DHT_FLOAT == 0
+  24:dht.c         **** int8_t dht_getdata(int8_t *temperature, int8_t *humidity) {
+  25:dht.c         **** #endif
+  26:dht.c         **** 	uint8_t bits[5];
+  71               		.loc 1 26 2 is_stmt 1 view .LVU2
+  27:dht.c         **** 	uint8_t i,j = 0;
+  72               		.loc 1 27 2 view .LVU3
+  73               	.LVL1:
+  28:dht.c         **** 
+  29:dht.c         **** 	memset(bits, 0, sizeof(bits));
+  74               		.loc 1 29 2 view .LVU4
+  75 0024 FE01      		movw r30,r28
+  76 0026 3196      		adiw r30,1
+  77 0028 85E0      		ldi r24,lo8(5)
+  78               	.LVL2:
+  79               		.loc 1 29 2 is_stmt 0 view .LVU5
+  80 002a DF01      		movw r26,r30
+  81               		0:
+  82 002c 1D92      		st X+,__zero_reg__
+  83 002e 8A95      		dec r24
+  84 0030 01F4      		brne 0b
+  30:dht.c         **** 
+  31:dht.c         **** 	//reset port
+  32:dht.c         **** 	DHT_DDR |= (1<<DHT_INPUTPIN); //output
+  85               		.loc 1 32 1 is_stmt 1 view .LVU6
+  86               		.loc 1 32 9 is_stmt 0 view .LVU7
+  87 0032 BB9A      		sbi 0x17,3
+  33:dht.c         **** 	DHT_PORT |= (1<<DHT_INPUTPIN); //high
+  88               		.loc 1 33 1 is_stmt 1 view .LVU8
+  89               		.loc 1 33 10 is_stmt 0 view .LVU9
+  90 0034 C39A      		sbi 0x18,3
+  34:dht.c         **** 	_delay_ms(100);
+  91               		.loc 1 34 2 is_stmt 1 view .LVU10
+  92               	.LVL3:
+  93               	.LBB18:
+  94               	.LBI18:
+  95               		.file 2 "/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h"
+   1:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+   6:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+   9:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  12:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  17:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  21:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  33:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /* $Id: delay.h.in 2506 2016-02-08 10:05:45Z joerg_wunsch $ */
+  34:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  35:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  38:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef __DOXYGEN__
+  39:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #  ifndef __HAS_DELAY_CYCLES
+  40:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #    define __HAS_DELAY_CYCLES 1
+  41:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #  endif
+  42:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif  /* __DOXYGEN__ */
+  43:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  44:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #include <inttypes.h>
+  45:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  46:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #include <math.h>
+  47:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  48:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /** \file */
+  49:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  50:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \code
+  51:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  52:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  53:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     #include <util/delay.h>
+  54:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \endcode
+  55:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  56:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  57:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  58:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  59:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     used.
+  60:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  61:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  62:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  63:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  64:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  65:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  66:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  67:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  68:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  69:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  70:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  71:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  72:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  73:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  74:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  75:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  76:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  77:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     routines linked into the application.
+  78:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  79:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  80:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  81:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  82:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  83:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** */
+  84:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  85:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  86:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** static __inline__ void _delay_us(double __us) __attribute__((__always_inline__));
+  87:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** static __inline__ void _delay_ms(double __ms) __attribute__((__always_inline__));
+  88:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+  89:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  90:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef F_CPU
+  91:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  92:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  93:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /** \ingroup util_delay
+  94:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \def F_CPU
+  95:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \brief CPU frequency in Hz
+  96:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  97:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     The macro F_CPU specifies the CPU frequency to be considered by
+  98:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     the delay macros.  This macro is normally supplied by the
+  99:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     environment (e.g. from within a project header, or the project's
+ 100:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     Makefile).  The value 1 MHz here is only provided as a "vanilla"
+ 101:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     fallback if no such user-provided definition could be found.
+ 102:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 103:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     In terms of the delay functions, the CPU frequency can be given as
+ 104:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     a floating-point constant (e.g. 3.6864E6 for 3.6864 MHz).
+ 105:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     However, the macros in <util/setbaud.h> require it to be an
+ 106:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     integer value.
+ 107:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****  */
+ 108:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** # define F_CPU 1000000UL
+ 109:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 110:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 111:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+ 112:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+ 113:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 114:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 115:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 116:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 117:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 118:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #  include <math.h>
+ 119:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 120:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 121:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /**
+ 122:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \ingroup util_delay
+ 123:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 124:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 125:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 126:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 127:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 128:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 129:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 130:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 131:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 132:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 133:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 134:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 135:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 136:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 137:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 138:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 139:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 140:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 141:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 142:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Conversion of \c __ms into clock cycles may not always result in
+ 143:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 144:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    integer. This ensures that the user gets at least \c __ms
+ 145:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    microseconds of delay.
+ 146:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 147:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 148:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 149:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 150:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    respectively.
+ 151:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 152:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \note
+ 153:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 154:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The implementation of _delay_ms() based on
+ 155:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 156:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    implementations.  In order to get functionality backward compatible
+ 157:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    with previous versions, the macro \c "__DELAY_BACKWARD_COMPATIBLE__"
+ 158:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    must be defined before including this header file. Also, the
+ 159:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    backward compatible algorithm will be chosen if the code is
+ 160:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 161:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 162:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    not available to the compiler then.
+ 163:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 164:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****  */
+ 165:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** void
+ 166:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** _delay_ms(double __ms)
+  96               		.loc 2 166 1 view .LVU11
+  97               	.LBB19:
+ 167:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 168:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	double __tmp ;
+  98               		.loc 2 168 2 view .LVU12
+ 169:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 170:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 171:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 172:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+  99               		.loc 2 172 2 view .LVU13
+ 173:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 100               		.loc 2 173 2 view .LVU14
+ 174:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 101               		.loc 2 174 2 view .LVU15
+ 175:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 176:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 177:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 178:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 179:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 180:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 181:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 182:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#else
+ 183:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		//round up by default
+ 184:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 102               		.loc 2 184 3 view .LVU16
+ 185:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 186:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 187:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 103               		.loc 2 187 2 view .LVU17
+ 104 0036 87EA      		ldi r24,lo8(24999)
+ 105 0038 91E6      		ldi r25,hi8(24999)
+ 106 003a 0197      	1:	sbiw r24,1
+ 107 003c 01F4      		brne 1b
+ 108 003e 00C0      		rjmp .
+ 109 0040 0000      		nop
+ 110               	.LVL4:
+ 111               		.loc 2 187 2 is_stmt 0 view .LVU18
+ 112               	.LBE19:
+ 113               	.LBE18:
+  35:dht.c         **** 
+  36:dht.c         **** 	//send request
+  37:dht.c         **** 	DHT_PORT &= ~(1<<DHT_INPUTPIN); //low
+ 114               		.loc 1 37 1 is_stmt 1 view .LVU19
+ 115               		.loc 1 37 10 is_stmt 0 view .LVU20
+ 116 0042 C398      		cbi 0x18,3
+  38:dht.c         **** 	#if DHT_TYPE == DHT_DHT11
+  39:dht.c         **** 	_delay_ms(18);
+  40:dht.c         **** 	#elif DHT_TYPE == DHT_DHT22
+  41:dht.c         **** 	_delay_us(500);
+ 117               		.loc 1 41 2 is_stmt 1 view .LVU21
+ 118               	.LVL5:
+ 119               	.LBB20:
+ 120               	.LBI20:
+ 188:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 189:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #else
+ 190:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	uint16_t __ticks;
+ 191:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 4e3) * __ms;
+ 192:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	if (__tmp < 1.0)
+ 193:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks = 1;
+ 194:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	else if (__tmp > 65535)
+ 195:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	{
+ 196:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		//	__ticks = requested delay in 1/10 ms
+ 197:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks = (uint16_t) (__ms * 10.0);
+ 198:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		while(__ticks)
+ 199:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		{
+ 200:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 			// wait 1/10 ms
+ 201:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 			_delay_loop_2(((F_CPU) / 4e3) / 10);
+ 202:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 			__ticks --;
+ 203:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		}
+ 204:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		return;
+ 205:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	}
+ 206:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	else
+ 207:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks = (uint16_t)__tmp;
+ 208:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	_delay_loop_2(__ticks);
+ 209:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 210:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** }
+ 211:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 212:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /**
+ 213:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \ingroup util_delay
+ 214:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 215:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Perform a delay of \c __us microseconds, using _delay_loop_1().
+ 216:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 217:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 218:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 219:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 220:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The maximal possible delay is 768 us / F_CPU in MHz.
+ 221:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 222:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    If the user requests a delay greater than the maximal possible one,
+ 223:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    _delay_us() will automatically call _delay_ms() instead.  The user
+ 224:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    will not be informed about this case.
+ 225:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 226:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 227:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 us/ F_CPU in MHz. For
+ 228:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflow results in
+ 229:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    no delay i.e., 0us.
+ 230:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 231:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Conversion of \c __us into clock cycles may not always result in
+ 232:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 233:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    integer. This ensures that the user gets at least \c __us
+ 234:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    microseconds of delay.
+ 235:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 236:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 237:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 238:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 239:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    respectively.
+ 240:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 241:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \note
+ 242:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 243:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The implementation of _delay_ms() based on
+ 244:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 245:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    implementations.  In order to get functionality backward compatible
+ 246:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    with previous versions, the macro \c __DELAY_BACKWARD_COMPATIBLE__
+ 247:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    must be defined before including this header file. Also, the
+ 248:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    backward compatible algorithm will be chosen if the code is
+ 249:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 250:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 251:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    not available to the compiler then.
+ 252:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 253:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****  */
+ 254:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** void
+ 255:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** _delay_us(double __us)
+ 121               		.loc 2 255 1 view .LVU22
+ 122               	.LBB21:
+ 256:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 257:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	double __tmp ;
+ 123               		.loc 2 257 2 view .LVU23
+ 258:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 259:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 260:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 261:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 124               		.loc 2 261 2 view .LVU24
+ 262:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 125               		.loc 2 262 2 view .LVU25
+ 263:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 126               		.loc 2 263 2 view .LVU26
+ 264:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 265:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 266:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 267:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 268:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 269:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 270:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 271:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#else
+ 272:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		//round up by default
+ 273:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 127               		.loc 2 273 3 view .LVU27
+ 274:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 275:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 276:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 128               		.loc 2 276 2 view .LVU28
+ 129 0044 96EA      		ldi r25,lo8(-90)
+ 130 0046 9A95      	1:	dec r25
+ 131 0048 01F4      		brne 1b
+ 132 004a 00C0      		rjmp .
+ 133               	.LVL6:
+ 134               		.loc 2 276 2 is_stmt 0 view .LVU29
+ 135               	.LBE21:
+ 136               	.LBE20:
+  42:dht.c         **** 	#endif
+  43:dht.c         **** 	DHT_PORT |= (1<<DHT_INPUTPIN); //high
+ 137               		.loc 1 43 1 is_stmt 1 view .LVU30
+ 138               		.loc 1 43 10 is_stmt 0 view .LVU31
+ 139 004c C39A      		sbi 0x18,3
+  44:dht.c         **** 	DHT_DDR &= ~(1<<DHT_INPUTPIN); //input
+ 140               		.loc 1 44 1 is_stmt 1 view .LVU32
+ 141               		.loc 1 44 9 is_stmt 0 view .LVU33
+ 142 004e BB98      		cbi 0x17,3
+  45:dht.c         **** 	_delay_us(40);
+ 143               		.loc 1 45 2 is_stmt 1 view .LVU34
+ 144               	.LVL7:
+ 145               	.LBB22:
+ 146               	.LBI22:
+ 255:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 147               		.loc 2 255 1 view .LVU35
+ 148               	.LBB23:
+ 257:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 149               		.loc 2 257 2 view .LVU36
+ 261:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 150               		.loc 2 261 2 view .LVU37
+ 262:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 151               		.loc 2 262 2 view .LVU38
+ 263:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 152               		.loc 2 263 2 view .LVU39
+ 273:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 153               		.loc 2 273 3 view .LVU40
+ 154               		.loc 2 276 2 view .LVU41
+ 155 0050 ADE0      		ldi r26,lo8(13)
+ 156 0052 AA95      	1:	dec r26
+ 157 0054 01F4      		brne 1b
+ 158 0056 0000      		nop
+ 159               	.LVL8:
+ 160               		.loc 2 276 2 is_stmt 0 view .LVU42
+ 161               	.LBE23:
+ 162               	.LBE22:
+  46:dht.c         **** 
+  47:dht.c         **** 	//check start condition 1
+  48:dht.c         **** 	if((DHT_PIN & (1<<DHT_INPUTPIN))) {
+ 163               		.loc 1 48 2 is_stmt 1 view .LVU43
+ 164               		.loc 1 48 4 is_stmt 0 view .LVU44
+ 165 0058 B39B      		sbis 0x16,3
+ 166 005a 00C0      		rjmp .L2
+ 167               	.LVL9:
+ 168               	.L4:
+  49:dht.c         **** 		return -1;
+ 169               		.loc 1 49 10 view .LVU45
+ 170 005c 8FEF      		ldi r24,lo8(-1)
+ 171               	.L1:
+ 172               	/* epilogue start */
+  50:dht.c         **** 	}
+  51:dht.c         **** 	_delay_us(80);
+  52:dht.c         **** 	//check start condition 2
+  53:dht.c         **** 	if(!(DHT_PIN & (1<<DHT_INPUTPIN))) {
+  54:dht.c         **** 		return -1;
+  55:dht.c         **** 	}
+  56:dht.c         **** 	_delay_us(80);
+  57:dht.c         **** 
+  58:dht.c         **** 	//read the data
+  59:dht.c         **** 	uint16_t timeoutcounter = 0;
+  60:dht.c         **** 	for (j=0; j<5; j++) { //read 5 byte
+  61:dht.c         **** 		uint8_t result=0;
+  62:dht.c         **** 		for(i=0; i<8; i++) {//read every bit
+  63:dht.c         **** 			timeoutcounter = 0;
+  64:dht.c         **** 			while(!(DHT_PIN & (1<<DHT_INPUTPIN))) { //wait for an high input (non blocking)
+  65:dht.c         **** 				timeoutcounter++;
+  66:dht.c         **** 				if(timeoutcounter > DHT_TIMEOUT) {
+  67:dht.c         **** 					return -1; //timeout
+  68:dht.c         **** 				}
+  69:dht.c         **** 			}
+  70:dht.c         **** 			_delay_us(30);
+  71:dht.c         **** 			if(DHT_PIN & (1<<DHT_INPUTPIN)) //if input is high after 30 us, get result
+  72:dht.c         **** 				result |= (1<<(7-i));
+  73:dht.c         **** 			timeoutcounter = 0;
+  74:dht.c         **** 			while(DHT_PIN & (1<<DHT_INPUTPIN)) { //wait until input get low (non blocking)
+  75:dht.c         **** 				timeoutcounter++;
+  76:dht.c         **** 				if(timeoutcounter > DHT_TIMEOUT) {
+  77:dht.c         **** 					return -1; //timeout
+  78:dht.c         **** 				}
+  79:dht.c         **** 			}
+  80:dht.c         **** 		}
+  81:dht.c         **** 		bits[j] = result;
+  82:dht.c         **** 	}
+  83:dht.c         **** 
+  84:dht.c         **** 	//reset port
+  85:dht.c         **** 	DHT_DDR |= (1<<DHT_INPUTPIN); //output
+  86:dht.c         **** 	DHT_PORT |= (1<<DHT_INPUTPIN); //low
+  87:dht.c         **** 	_delay_ms(100);
+  88:dht.c         **** 
+  89:dht.c         **** 	//check checksum
+  90:dht.c         **** 	if ((uint8_t)(bits[0] + bits[1] + bits[2] + bits[3]) == bits[4]) {
+  91:dht.c         **** 		//return temperature and humidity
+  92:dht.c         **** 		#if DHT_TYPE == DHT_DHT11
+  93:dht.c         **** 		*temperature = bits[2];
+  94:dht.c         **** 		*humidity = bits[0];
+  95:dht.c         **** 		#elif DHT_TYPE == DHT_DHT22
+  96:dht.c         **** 		uint16_t rawhumidity = bits[0]<<8 | bits[1];
+  97:dht.c         **** 		uint16_t rawtemperature = bits[2]<<8 | bits[3];
+  98:dht.c         **** 		if(rawtemperature & 0x8000) {
+  99:dht.c         **** 			*temperature = (float)((rawtemperature & 0x7FFF) / 10.0) * -1.0;
+ 100:dht.c         **** 		} else {
+ 101:dht.c         **** 			*temperature = (float)(rawtemperature)/10.0;
+ 102:dht.c         **** 		}
+ 103:dht.c         **** 		*humidity = (float)(rawhumidity)/10.0;
+ 104:dht.c         **** 		#endif
+ 105:dht.c         **** 		return 0;
+ 106:dht.c         **** 	}
+ 107:dht.c         **** 
+ 108:dht.c         **** 	return -1;
+ 109:dht.c         **** }
+ 173               		.loc 1 109 1 view .LVU46
+ 174 005e 2996      		adiw r28,9
+ 175 0060 0FB6      		in __tmp_reg__,__SREG__
+ 176 0062 F894      		cli
+ 177 0064 DEBF      		out __SP_H__,r29
+ 178 0066 0FBE      		out __SREG__,__tmp_reg__
+ 179 0068 CDBF      		out __SP_L__,r28
+ 180 006a DF91      		pop r29
+ 181 006c CF91      		pop r28
+ 182 006e 1F91      		pop r17
+ 183 0070 0F91      		pop r16
+ 184 0072 FF90      		pop r15
+ 185 0074 EF90      		pop r14
+ 186               	.LVL10:
+ 187               		.loc 1 109 1 view .LVU47
+ 188 0076 DF90      		pop r13
+ 189 0078 CF90      		pop r12
+ 190               	.LVL11:
+ 191               		.loc 1 109 1 view .LVU48
+ 192 007a 0895      		ret
+ 193               	.LVL12:
+ 194               	.L2:
+  51:dht.c         **** 	//check start condition 2
+ 195               		.loc 1 51 2 is_stmt 1 view .LVU49
+ 196               	.LBB24:
+ 197               	.LBI24:
+ 255:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 198               		.loc 2 255 1 view .LVU50
+ 199               	.LBB25:
+ 257:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 200               		.loc 2 257 2 view .LVU51
+ 261:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 201               		.loc 2 261 2 view .LVU52
+ 262:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 202               		.loc 2 262 2 view .LVU53
+ 263:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 203               		.loc 2 263 2 view .LVU54
+ 273:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 204               		.loc 2 273 3 view .LVU55
+ 205               		.loc 2 276 2 view .LVU56
+ 206 007c BAE1      		ldi r27,lo8(26)
+ 207 007e BA95      	1:	dec r27
+ 208 0080 01F4      		brne 1b
+ 209 0082 00C0      		rjmp .
+ 210               	.LVL13:
+ 211               		.loc 2 276 2 is_stmt 0 view .LVU57
+ 212               	.LBE25:
+ 213               	.LBE24:
+  53:dht.c         **** 		return -1;
+ 214               		.loc 1 53 2 is_stmt 1 view .LVU58
+  53:dht.c         **** 		return -1;
+ 215               		.loc 1 53 4 is_stmt 0 view .LVU59
+ 216 0084 B39B      		sbis 0x16,3
+ 217 0086 00C0      		rjmp .L4
+  56:dht.c         **** 
+ 218               		.loc 1 56 2 is_stmt 1 view .LVU60
+ 219               	.LVL14:
+ 220               	.LBB26:
+ 221               	.LBI26:
+ 255:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 222               		.loc 2 255 1 view .LVU61
+ 223               	.LBB27:
+ 257:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 224               		.loc 2 257 2 view .LVU62
+ 261:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 225               		.loc 2 261 2 view .LVU63
+ 262:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 226               		.loc 2 262 2 view .LVU64
+ 263:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 227               		.loc 2 263 2 view .LVU65
+ 273:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 228               		.loc 2 273 3 view .LVU66
+ 229               		.loc 2 276 2 view .LVU67
+ 230 0088 2AE1      		ldi r18,lo8(26)
+ 231 008a 2A95      	1:	dec r18
+ 232 008c 01F4      		brne 1b
+ 233 008e 00C0      		rjmp .
+ 234               	.LVL15:
+ 235               		.loc 2 276 2 is_stmt 0 view .LVU68
+ 236               	.LBE27:
+ 237               	.LBE26:
+  59:dht.c         **** 	for (j=0; j<5; j++) { //read 5 byte
+ 238               		.loc 1 59 2 is_stmt 1 view .LVU69
+  60:dht.c         **** 		uint8_t result=0;
+ 239               		.loc 1 60 2 view .LVU70
+ 240               	.LBB28:
+  72:dht.c         **** 			timeoutcounter = 0;
+ 241               		.loc 1 72 17 is_stmt 0 view .LVU71
+ 242 0090 61E0      		ldi r22,lo8(1)
+ 243 0092 70E0      		ldi r23,0
+ 244               	.LBE28:
+  60:dht.c         **** 		uint8_t result=0;
+ 245               		.loc 1 60 2 view .LVU72
+ 246 0094 35E0      		ldi r19,lo8(5)
+ 247 0096 3E0F      		add r19,r30
+ 248               	.LVL16:
+ 249               	.L5:
+ 250               	.LBB31:
+  61:dht.c         **** 		for(i=0; i<8; i++) {//read every bit
+ 251               		.loc 1 61 11 view .LVU73
+ 252 0098 20E0      		ldi r18,0
+ 253 009a 87E0      		ldi r24,lo8(7)
+ 254 009c 90E0      		ldi r25,0
+ 255 009e 00C0      		rjmp .L13
+ 256               	.LVL17:
+ 257               	.L6:
+  65:dht.c         **** 				if(timeoutcounter > DHT_TIMEOUT) {
+ 258               		.loc 1 65 5 is_stmt 1 view .LVU74
+  66:dht.c         **** 					return -1; //timeout
+ 259               		.loc 1 66 5 view .LVU75
+ 260 00a0 4150      		subi r20,1
+ 261 00a2 5109      		sbc r21,__zero_reg__
+ 262               	.LVL18:
+  66:dht.c         **** 					return -1; //timeout
+ 263               		.loc 1 66 7 is_stmt 0 view .LVU76
+ 264 00a4 01F0      		breq .L4
+ 265               	.LVL19:
+ 266               	.L11:
+  64:dht.c         **** 				timeoutcounter++;
+ 267               		.loc 1 64 9 view .LVU77
+ 268 00a6 B39B      		sbis 0x16,3
+ 269 00a8 00C0      		rjmp .L6
+  70:dht.c         **** 			if(DHT_PIN & (1<<DHT_INPUTPIN)) //if input is high after 30 us, get result
+ 270               		.loc 1 70 4 is_stmt 1 view .LVU78
+ 271               	.LVL20:
+ 272               	.LBB29:
+ 273               	.LBI29:
+ 255:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 274               		.loc 2 255 1 view .LVU79
+ 275               	.LBB30:
+ 257:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 276               		.loc 2 257 2 view .LVU80
+ 261:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 277               		.loc 2 261 2 view .LVU81
+ 262:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e6) * __us;
+ 278               		.loc 2 262 2 view .LVU82
+ 263:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 279               		.loc 2 263 2 view .LVU83
+ 273:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 280               		.loc 2 273 3 view .LVU84
+ 281               		.loc 2 276 2 view .LVU85
+ 282 00aa 4AE0      		ldi r20,lo8(10)
+ 283 00ac 4A95      	1:	dec r20
+ 284 00ae 01F4      		brne 1b
+ 285               	.LVL21:
+ 286               		.loc 2 276 2 is_stmt 0 view .LVU86
+ 287               	.LBE30:
+ 288               	.LBE29:
+  71:dht.c         **** 				result |= (1<<(7-i));
+ 289               		.loc 1 71 4 is_stmt 1 view .LVU87
+  71:dht.c         **** 				result |= (1<<(7-i));
+ 290               		.loc 1 71 6 is_stmt 0 view .LVU88
+ 291 00b0 B39B      		sbis 0x16,3
+ 292 00b2 00C0      		rjmp .L7
+  72:dht.c         **** 			timeoutcounter = 0;
+ 293               		.loc 1 72 5 is_stmt 1 view .LVU89
+  72:dht.c         **** 			timeoutcounter = 0;
+ 294               		.loc 1 72 17 is_stmt 0 view .LVU90
+ 295 00b4 AB01      		movw r20,r22
+ 296 00b6 082E      		mov r0,r24
+ 297 00b8 00C0      		rjmp 2f
+ 298               		1:
+ 299 00ba 440F      		lsl r20
+ 300               		2:
+ 301 00bc 0A94      		dec r0
+ 302 00be 02F4      		brpl 1b
+  72:dht.c         **** 			timeoutcounter = 0;
+ 303               		.loc 1 72 12 view .LVU91
+ 304 00c0 242B      		or r18,r20
+ 305               	.LVL22:
+ 306               	.L7:
+  73:dht.c         **** 			while(DHT_PIN & (1<<DHT_INPUTPIN)) { //wait until input get low (non blocking)
+ 307               		.loc 1 73 4 is_stmt 1 view .LVU92
+  74:dht.c         **** 				timeoutcounter++;
+ 308               		.loc 1 74 4 view .LVU93
+  74:dht.c         **** 				timeoutcounter++;
+ 309               		.loc 1 74 9 is_stmt 0 view .LVU94
+ 310 00c2 49EC      		ldi r20,lo8(-55)
+ 311 00c4 50E0      		ldi r21,0
+ 312               	.LVL23:
+ 313               	.L8:
+  74:dht.c         **** 				timeoutcounter++;
+ 314               		.loc 1 74 9 view .LVU95
+ 315 00c6 B399      		sbic 0x16,3
+ 316 00c8 00C0      		rjmp .L9
+ 317               	.LVL24:
+  74:dht.c         **** 				timeoutcounter++;
+ 318               		.loc 1 74 9 view .LVU96
+ 319               	.LVL25:
+ 320 00ca 0197      		sbiw r24,1
+ 321 00cc 00F0      		brcs .L10
+ 322               	.L13:
+  74:dht.c         **** 				timeoutcounter++;
+ 323               		.loc 1 74 9 view .LVU97
+ 324               	.LBE31:
+  22:dht.c         **** #elif DHT_FLOAT == 0
+ 325               		.loc 1 22 57 view .LVU98
+ 326 00ce 49EC      		ldi r20,lo8(-55)
+ 327 00d0 50E0      		ldi r21,0
+ 328 00d2 00C0      		rjmp .L11
+ 329               	.LVL26:
+ 330               	.L9:
+ 331               	.LBB32:
+  75:dht.c         **** 				if(timeoutcounter > DHT_TIMEOUT) {
+ 332               		.loc 1 75 5 is_stmt 1 view .LVU99
+  76:dht.c         **** 					return -1; //timeout
+ 333               		.loc 1 76 5 view .LVU100
+ 334 00d4 4150      		subi r20,1
+ 335 00d6 5109      		sbc r21,__zero_reg__
+ 336               	.LVL27:
+  76:dht.c         **** 					return -1; //timeout
+ 337               		.loc 1 76 7 is_stmt 0 view .LVU101
+ 338 00d8 01F4      		brne .L8
+ 339 00da 00C0      		rjmp .L4
+ 340               	.L10:
+  81:dht.c         **** 	}
+ 341               		.loc 1 81 3 is_stmt 1 discriminator 2 view .LVU102
+  81:dht.c         **** 	}
+ 342               		.loc 1 81 11 is_stmt 0 discriminator 2 view .LVU103
+ 343 00dc 2193      		st Z+,r18
+ 344               	.LBE32:
+  60:dht.c         **** 		uint8_t result=0;
+ 345               		.loc 1 60 2 discriminator 2 view .LVU104
+ 346 00de 3E13      		cpse r19,r30
+ 347 00e0 00C0      		rjmp .L5
+  85:dht.c         **** 	DHT_PORT |= (1<<DHT_INPUTPIN); //low
+ 348               		.loc 1 85 1 is_stmt 1 view .LVU105
+  85:dht.c         **** 	DHT_PORT |= (1<<DHT_INPUTPIN); //low
+ 349               		.loc 1 85 9 is_stmt 0 view .LVU106
+ 350 00e2 BB9A      		sbi 0x17,3
+  86:dht.c         **** 	_delay_ms(100);
+ 351               		.loc 1 86 1 is_stmt 1 view .LVU107
+  86:dht.c         **** 	_delay_ms(100);
+ 352               		.loc 1 86 10 is_stmt 0 view .LVU108
+ 353 00e4 C39A      		sbi 0x18,3
+  87:dht.c         **** 
+ 354               		.loc 1 87 2 is_stmt 1 view .LVU109
+ 355               	.LVL28:
+ 356               	.LBB33:
+ 357               	.LBI33:
+ 166:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 358               		.loc 2 166 1 view .LVU110
+ 359               	.LBB34:
+ 168:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 360               		.loc 2 168 2 view .LVU111
+ 172:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 361               		.loc 2 172 2 view .LVU112
+ 173:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 362               		.loc 2 173 2 view .LVU113
+ 174:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 363               		.loc 2 174 2 view .LVU114
+ 184:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 364               		.loc 2 184 3 view .LVU115
+ 187:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 365               		.loc 2 187 2 view .LVU116
+ 366 00e6 87EA      		ldi r24,lo8(24999)
+ 367 00e8 91E6      		ldi r25,hi8(24999)
+ 368 00ea 0197      	1:	sbiw r24,1
+ 369 00ec 01F4      		brne 1b
+ 370               	.LVL29:
+ 187:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 371               		.loc 2 187 2 is_stmt 0 view .LVU117
+ 372 00ee 00C0      		rjmp .
+ 373 00f0 0000      		nop
+ 374               	.LVL30:
+ 187:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 375               		.loc 2 187 2 view .LVU118
+ 376               	.LBE34:
+ 377               	.LBE33:
+  90:dht.c         **** 		//return temperature and humidity
+ 378               		.loc 1 90 2 is_stmt 1 view .LVU119
+ 379 00f2 0981      		ldd r16,Y+1
+ 380 00f4 1A81      		ldd r17,Y+2
+ 381 00f6 1027      		eor r17,r16
+ 382 00f8 0127      		eor r16,r17
+ 383 00fa 1027      		eor r17,r16
+ 384 00fc 8B81      		ldd r24,Y+3
+ 385 00fe 9C81      		ldd r25,Y+4
+ 386 0100 9827      		eor r25,r24
+ 387 0102 8927      		eor r24,r25
+ 388 0104 9827      		eor r25,r24
+  90:dht.c         **** 		//return temperature and humidity
+ 389               		.loc 1 90 24 is_stmt 0 view .LVU120
+ 390 0106 2981      		ldd r18,Y+1
+ 391               	.LVL31:
+  90:dht.c         **** 		//return temperature and humidity
+ 392               		.loc 1 90 24 view .LVU121
+ 393 0108 3A81      		ldd r19,Y+2
+ 394 010a 230F      		add r18,r19
+  90:dht.c         **** 		//return temperature and humidity
+ 395               		.loc 1 90 34 view .LVU122
+ 396 010c 3B81      		ldd r19,Y+3
+ 397 010e 230F      		add r18,r19
+  90:dht.c         **** 		//return temperature and humidity
+ 398               		.loc 1 90 6 view .LVU123
+ 399 0110 3C81      		ldd r19,Y+4
+ 400 0112 230F      		add r18,r19
+  90:dht.c         **** 		//return temperature and humidity
+ 401               		.loc 1 90 5 view .LVU124
+ 402 0114 3D81      		ldd r19,Y+5
+ 403 0116 2313      		cpse r18,r19
+ 404 0118 00C0      		rjmp .L4
+ 405               	.LBB35:
+  96:dht.c         **** 		uint16_t rawtemperature = bits[2]<<8 | bits[3];
+ 406               		.loc 1 96 3 is_stmt 1 view .LVU125
+ 407               	.LVL32:
+  97:dht.c         **** 		if(rawtemperature & 0x8000) {
+ 408               		.loc 1 97 3 view .LVU126
+  98:dht.c         **** 			*temperature = (float)((rawtemperature & 0x7FFF) / 10.0) * -1.0;
+ 409               		.loc 1 98 3 view .LVU127
+  98:dht.c         **** 			*temperature = (float)((rawtemperature & 0x7FFF) / 10.0) * -1.0;
+ 410               		.loc 1 98 5 is_stmt 0 view .LVU128
+ 411 011a 97FF      		sbrs r25,7
+ 412 011c 00C0      		rjmp .L14
+  99:dht.c         **** 		} else {
+ 413               		.loc 1 99 4 is_stmt 1 view .LVU129
+  99:dht.c         **** 		} else {
+ 414               		.loc 1 99 43 is_stmt 0 view .LVU130
+ 415 011e 9F77      		andi r25,127
+ 416               	.LVL33:
+  99:dht.c         **** 		} else {
+ 417               		.loc 1 99 53 view .LVU131
+ 418 0120 9C01      		movw r18,r24
+ 419 0122 50E0      		ldi r21,0
+ 420 0124 40E0      		ldi r20,0
+ 421               	.LVL34:
+  99:dht.c         **** 		} else {
+ 422               		.loc 1 99 53 view .LVU132
+ 423 0126 2E83      		std Y+6,r18
+ 424 0128 3F83      		std Y+7,r19
+ 425 012a 4887      		std Y+8,r20
+ 426 012c 5987      		std Y+9,r21
+ 427 012e CA01      		movw r24,r20
+ 428 0130 B901      		movw r22,r18
+ 429 0132 00D0      		rcall __floatunsisf
+ 430               	.LVL35:
+  99:dht.c         **** 		} else {
+ 431               		.loc 1 99 53 view .LVU133
+ 432 0134 20E0      		ldi r18,0
+ 433 0136 30E0      		ldi r19,0
+ 434 0138 40E2      		ldi r20,lo8(32)
+ 435 013a 51E4      		ldi r21,lo8(65)
+ 436 013c 6E83      		std Y+6,r22
+ 437 013e 7F83      		std Y+7,r23
+ 438 0140 8887      		std Y+8,r24
+ 439 0142 9987      		std Y+9,r25
+ 440 0144 6E81      		ldd r22,Y+6
+ 441 0146 7F81      		ldd r23,Y+7
+ 442 0148 8885      		ldd r24,Y+8
+ 443 014a 9985      		ldd r25,Y+9
+ 444 014c 00D0      		rcall __divsf3
+ 445               	.LVL36:
+  99:dht.c         **** 		} else {
+ 446               		.loc 1 99 61 view .LVU134
+ 447 014e DC01      		movw r26,r24
+ 448 0150 CB01      		movw r24,r22
+ 449 0152 B058      		subi r27,0x80
+  99:dht.c         **** 		} else {
+ 450               		.loc 1 99 17 view .LVU135
+ 451 0154 F701      		movw r30,r14
+ 452 0156 8083      		st Z,r24
+ 453 0158 9183      		std Z+1,r25
+ 454 015a A283      		std Z+2,r26
+ 455 015c B383      		std Z+3,r27
+ 456               	.L15:
+ 103:dht.c         **** 		#endif
+ 457               		.loc 1 103 3 is_stmt 1 view .LVU136
+ 103:dht.c         **** 		#endif
+ 458               		.loc 1 103 15 is_stmt 0 view .LVU137
+ 459 015e 9801      		movw r18,r16
+ 460 0160 50E0      		ldi r21,0
+ 461 0162 40E0      		ldi r20,0
+ 462 0164 2E83      		std Y+6,r18
+ 463 0166 3F83      		std Y+7,r19
+ 464 0168 4887      		std Y+8,r20
+ 465 016a 5987      		std Y+9,r21
+ 466 016c CA01      		movw r24,r20
+ 467 016e B801      		movw r22,r16
+ 468 0170 00D0      		rcall __floatunsisf
+ 469               	.LVL37:
+ 103:dht.c         **** 		#endif
+ 470               		.loc 1 103 35 view .LVU138
+ 471 0172 20E0      		ldi r18,0
+ 472 0174 30E0      		ldi r19,0
+ 473 0176 40E2      		ldi r20,lo8(32)
+ 474 0178 51E4      		ldi r21,lo8(65)
+ 475 017a 6E83      		std Y+6,r22
+ 476 017c 7F83      		std Y+7,r23
+ 477 017e 8887      		std Y+8,r24
+ 478 0180 9987      		std Y+9,r25
+ 479 0182 6E81      		ldd r22,Y+6
+ 480 0184 7F81      		ldd r23,Y+7
+ 481 0186 8885      		ldd r24,Y+8
+ 482 0188 9985      		ldd r25,Y+9
+ 483 018a 00D0      		rcall __divsf3
+ 484               	.LVL38:
+ 485 018c D601      		movw r26,r12
+ 486 018e 6D93      		st X+,r22
+ 487 0190 7D93      		st X+,r23
+ 488 0192 8D93      		st X+,r24
+ 489 0194 9C93      		st X,r25
+ 490 0196 1397      		sbiw r26,3
+ 105:dht.c         **** 	}
+ 491               		.loc 1 105 3 is_stmt 1 view .LVU139
+ 105:dht.c         **** 	}
+ 492               		.loc 1 105 10 is_stmt 0 view .LVU140
+ 493 0198 80E0      		ldi r24,0
+ 494 019a 00C0      		rjmp .L1
+ 495               	.LVL39:
+ 496               	.L14:
+ 101:dht.c         **** 		}
+ 497               		.loc 1 101 4 is_stmt 1 view .LVU141
+ 101:dht.c         **** 		}
+ 498               		.loc 1 101 19 is_stmt 0 view .LVU142
+ 499 019c 9C01      		movw r18,r24
+ 500 019e 50E0      		ldi r21,0
+ 501 01a0 40E0      		ldi r20,0
+ 502               	.LVL40:
+ 101:dht.c         **** 		}
+ 503               		.loc 1 101 19 view .LVU143
+ 504 01a2 2E83      		std Y+6,r18
+ 505 01a4 3F83      		std Y+7,r19
+ 506 01a6 4887      		std Y+8,r20
+ 507 01a8 5987      		std Y+9,r21
+ 508 01aa CA01      		movw r24,r20
+ 509               	.LVL41:
+ 101:dht.c         **** 		}
+ 510               		.loc 1 101 19 view .LVU144
+ 511 01ac B901      		movw r22,r18
+ 512 01ae 00D0      		rcall __floatunsisf
+ 513               	.LVL42:
+ 101:dht.c         **** 		}
+ 514               		.loc 1 101 42 view .LVU145
+ 515 01b0 20E0      		ldi r18,0
+ 516 01b2 30E0      		ldi r19,0
+ 517 01b4 40E2      		ldi r20,lo8(32)
+ 518 01b6 51E4      		ldi r21,lo8(65)
+ 519 01b8 6E83      		std Y+6,r22
+ 520 01ba 7F83      		std Y+7,r23
+ 521 01bc 8887      		std Y+8,r24
+ 522 01be 9987      		std Y+9,r25
+ 523 01c0 6E81      		ldd r22,Y+6
+ 524 01c2 7F81      		ldd r23,Y+7
+ 525 01c4 8885      		ldd r24,Y+8
+ 526 01c6 9985      		ldd r25,Y+9
+ 527 01c8 00D0      		rcall __divsf3
+ 528               	.LVL43:
+ 529 01ca D701      		movw r26,r14
+ 530 01cc 6D93      		st X+,r22
+ 531 01ce 7D93      		st X+,r23
+ 532 01d0 8D93      		st X+,r24
+ 533 01d2 9C93      		st X,r25
+ 534 01d4 1397      		sbiw r26,3
+ 535 01d6 00C0      		rjmp .L15
+ 536               	.LBE35:
+ 537               		.cfi_endproc
+ 538               	.LFE7:
+ 540               	.global	dht_gettemperature
+ 542               	dht_gettemperature:
+ 543               	.LVL44:
+ 544               	.LFB8:
+ 110:dht.c         **** 
+ 111:dht.c         **** /*
+ 112:dht.c         ****  * get temperature
+ 113:dht.c         ****  */
+ 114:dht.c         **** #if DHT_FLOAT == 1
+ 115:dht.c         **** int8_t dht_gettemperature(float *temperature) {
+ 545               		.loc 1 115 47 is_stmt 1 view -0
+ 546               		.cfi_startproc
+ 547               		.loc 1 115 47 is_stmt 0 view .LVU147
+ 548 01d8 CF93      		push r28
+ 549               	.LCFI10:
+ 550               		.cfi_def_cfa_offset 3
+ 551               		.cfi_offset 28, -2
+ 552 01da DF93      		push r29
+ 553               	.LCFI11:
+ 554               		.cfi_def_cfa_offset 4
+ 555               		.cfi_offset 29, -3
+ 556 01dc 00D0      		rcall .
+ 557 01de 00D0      		rcall .
+ 558               	.LCFI12:
+ 559               		.cfi_def_cfa_offset 8
+ 560 01e0 CDB7      		in r28,__SP_L__
+ 561 01e2 DEB7      		in r29,__SP_H__
+ 562               	.LCFI13:
+ 563               		.cfi_def_cfa_register 28
+ 564               	/* prologue: function */
+ 565               	/* frame size = 4 */
+ 566               	/* stack size = 6 */
+ 567               	.L__stack_usage = 6
+ 116:dht.c         **** 	float humidity = 0;
+ 568               		.loc 1 116 2 is_stmt 1 view .LVU148
+ 569               		.loc 1 116 8 is_stmt 0 view .LVU149
+ 570 01e4 1982      		std Y+1,__zero_reg__
+ 571 01e6 1A82      		std Y+2,__zero_reg__
+ 572 01e8 1B82      		std Y+3,__zero_reg__
+ 573 01ea 1C82      		std Y+4,__zero_reg__
+ 117:dht.c         **** #elif DHT_FLOAT == 0
+ 118:dht.c         **** int8_t dht_gettemperature(int8_t *temperature) {
+ 119:dht.c         **** 	int8_t humidity = 0;
+ 120:dht.c         **** #endif
+ 121:dht.c         **** 	return dht_getdata(temperature, &humidity);
+ 574               		.loc 1 121 2 is_stmt 1 view .LVU150
+ 575               		.loc 1 121 9 is_stmt 0 view .LVU151
+ 576 01ec BE01      		movw r22,r28
+ 577 01ee 6F5F      		subi r22,-1
+ 578 01f0 7F4F      		sbci r23,-1
+ 579 01f2 00D0      		rcall dht_getdata
+ 580               	.LVL45:
+ 581               	/* epilogue start */
+ 122:dht.c         **** }
+ 582               		.loc 1 122 1 view .LVU152
+ 583 01f4 0F90      		pop __tmp_reg__
+ 584 01f6 0F90      		pop __tmp_reg__
+ 585 01f8 0F90      		pop __tmp_reg__
+ 586 01fa 0F90      		pop __tmp_reg__
+ 587 01fc DF91      		pop r29
+ 588 01fe CF91      		pop r28
+ 589 0200 0895      		ret
+ 590               		.cfi_endproc
+ 591               	.LFE8:
+ 593               	.global	dht_gethumidity
+ 595               	dht_gethumidity:
+ 596               	.LVL46:
+ 597               	.LFB9:
+ 123:dht.c         **** 
+ 124:dht.c         **** /*
+ 125:dht.c         ****  * get humidity
+ 126:dht.c         ****  */
+ 127:dht.c         **** #if DHT_FLOAT == 1
+ 128:dht.c         **** int8_t dht_gethumidity(float *humidity) {
+ 598               		.loc 1 128 41 is_stmt 1 view -0
+ 599               		.cfi_startproc
+ 600               		.loc 1 128 41 is_stmt 0 view .LVU154
+ 601 0202 CF93      		push r28
+ 602               	.LCFI14:
+ 603               		.cfi_def_cfa_offset 3
+ 604               		.cfi_offset 28, -2
+ 605 0204 DF93      		push r29
+ 606               	.LCFI15:
+ 607               		.cfi_def_cfa_offset 4
+ 608               		.cfi_offset 29, -3
+ 609 0206 00D0      		rcall .
+ 610 0208 00D0      		rcall .
+ 611               	.LCFI16:
+ 612               		.cfi_def_cfa_offset 8
+ 613 020a CDB7      		in r28,__SP_L__
+ 614 020c DEB7      		in r29,__SP_H__
+ 615               	.LCFI17:
+ 616               		.cfi_def_cfa_register 28
+ 617               	/* prologue: function */
+ 618               	/* frame size = 4 */
+ 619               	/* stack size = 6 */
+ 620               	.L__stack_usage = 6
+ 621 020e BC01      		movw r22,r24
+ 129:dht.c         **** 	float temperature = 0;
+ 622               		.loc 1 129 2 is_stmt 1 view .LVU155
+ 623               		.loc 1 129 8 is_stmt 0 view .LVU156
+ 624 0210 1982      		std Y+1,__zero_reg__
+ 625 0212 1A82      		std Y+2,__zero_reg__
+ 626 0214 1B82      		std Y+3,__zero_reg__
+ 627 0216 1C82      		std Y+4,__zero_reg__
+ 130:dht.c         **** #elif DHT_FLOAT == 0
+ 131:dht.c         **** int8_t dht_gethumidity(int8_t *humidity) {
+ 132:dht.c         **** 	int8_t temperature = 0;
+ 133:dht.c         **** #endif
+ 134:dht.c         **** 	return dht_getdata(&temperature, humidity);
+ 628               		.loc 1 134 2 is_stmt 1 view .LVU157
+ 629               		.loc 1 134 9 is_stmt 0 view .LVU158
+ 630 0218 CE01      		movw r24,r28
+ 631               	.LVL47:
+ 632               		.loc 1 134 9 view .LVU159
+ 633 021a 0196      		adiw r24,1
+ 634 021c 00D0      		rcall dht_getdata
+ 635               	.LVL48:
+ 636               	/* epilogue start */
+ 135:dht.c         **** }
+ 637               		.loc 1 135 1 view .LVU160
+ 638 021e 0F90      		pop __tmp_reg__
+ 639 0220 0F90      		pop __tmp_reg__
+ 640 0222 0F90      		pop __tmp_reg__
+ 641 0224 0F90      		pop __tmp_reg__
+ 642 0226 DF91      		pop r29
+ 643 0228 CF91      		pop r28
+ 644 022a 0895      		ret
+ 645               		.cfi_endproc
+ 646               	.LFE9:
+ 648               	.global	dht_gettemperaturehumidity
+ 650               	dht_gettemperaturehumidity:
+ 651               	.LVL49:
+ 652               	.LFB10:
+ 136:dht.c         **** 
+ 137:dht.c         **** /*
+ 138:dht.c         ****  * get temperature and humidity
+ 139:dht.c         ****  */
+ 140:dht.c         **** #if DHT_FLOAT == 1
+ 141:dht.c         **** int8_t dht_gettemperaturehumidity(float *temperature, float *humidity) {
+ 653               		.loc 1 141 72 is_stmt 1 view -0
+ 654               		.cfi_startproc
+ 655               	/* prologue: function */
+ 656               	/* frame size = 0 */
+ 657               	/* stack size = 0 */
+ 658               	.L__stack_usage = 0
+ 142:dht.c         **** #elif DHT_FLOAT == 0
+ 143:dht.c         **** 	int8_t dht_gettemperaturehumidity(int8_t *temperature, int8_t *humidity) {
+ 144:dht.c         **** #endif
+ 145:dht.c         **** 	return dht_getdata(temperature, humidity);
+ 659               		.loc 1 145 2 view .LVU162
+ 660               		.loc 1 145 9 is_stmt 0 view .LVU163
+ 661 022c 00C0      		rjmp dht_getdata
+ 662               	.LVL50:
+ 663               		.loc 1 145 9 view .LVU164
+ 664               		.cfi_endproc
+ 665               	.LFE10:
+ 667               	.Letext0:
+ 668               		.file 3 "/usr/local/Cellar/avr-gcc/9.1.0/avr/include/stdint.h"
+ 669               		.file 4 "/usr/local/Cellar/avr-gcc/9.1.0/avr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 dht.c
+               dht.s:2      *ABS*:000000000000003e __SP_H__
+               dht.s:3      *ABS*:000000000000003d __SP_L__
+               dht.s:4      *ABS*:000000000000003f __SREG__
+               dht.s:5      *ABS*:0000000000000000 __tmp_reg__
+               dht.s:6      *ABS*:0000000000000001 __zero_reg__
+               dht.s:14     .text:0000000000000000 dht_getdata
+               dht.s:542    .text:00000000000001d8 dht_gettemperature
+               dht.s:595    .text:0000000000000202 dht_gethumidity
+               dht.s:650    .text:000000000000022c dht_gettemperaturehumidity
+
+UNDEFINED SYMBOLS
+__floatunsisf
+__divsf3
