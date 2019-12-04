@@ -137,12 +137,9 @@ int main (void)
   float millis;
   float kelvin;
   float celcius;
-  int celcius_rounded;
-  char vccText[16];
   char celciusText[16];
 
-  ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 0, "Temp:        C");
-  ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 2, "VCC:     mV");
+  ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 0, "T:   C");
 
   while(1){
     if(doIt == 1){
@@ -153,8 +150,6 @@ int main (void)
         vcc = vcc + read_VCC();
       }
       vcc = vcc/3;
-      itoa(vcc,vccText,10);
-      ssd1306tx_stringxy(ssd1306xled_font8x16data, 36, 2, vccText);
 
       //MEASURE TEMP SENSOR VOLTAGE
       millis = 0;
