@@ -1,0 +1,1805 @@
+   1               		.file	"main.c"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.Ltext0:
+   9               		.cfi_sections	.debug_frame
+  10               		.section	.rodata.str1.1,"aMS",@progbits,1
+  11               	.LC0:
+  12 0000 543A 00   		.string	"T:"
+  13               	.LC1:
+  14 0003 463A 00   		.string	"F:"
+  15               	.LC2:
+  16 0006 5365 743A 		.string	"Set:"
+  16      00
+  17               		.text
+  18               	.global	hardware_init
+  20               	hardware_init:
+  21               	.LFB7:
+  22               		.file 1 "main.c"
+   1:main.c        **** /*
+   2:main.c        **** ATTiny85
+   3:main.c        **** 
+   4:main.c        ****          RST PB5|1   8|VCC
+   5:main.c        **** Raise   ADC3 PB3|2   7|PB2   SCK OLED
+   6:main.c        **** Lower   ADC2 PB4|3   6|PB1   DHT22
+   7:main.c        ****              GND|4   5|PB0   SCL OLED
+   8:main.c        **** 
+   9:main.c        **** */
+  10:main.c        **** 
+  11:main.c        **** 
+  12:main.c        **** #define F_CPU 1000000
+  13:main.c        **** #include <avr/io.h>
+  14:main.c        **** #include <util/delay.h>
+  15:main.c        **** #include <avr/interrupt.h>
+  16:main.c        **** 
+  17:main.c        **** #include "ssd1306xled.h"
+  18:main.c        **** #include "ssd1306xledtx.h"
+  19:main.c        **** #include "font6x8.h"
+  20:main.c        **** #include "font8x16.h"
+  21:main.c        **** #include "dhtxx.h"
+  22:main.c        **** 
+  23:main.c        **** #define DHT_PIN 1 // pin of the DHT22 sensor
+  24:main.c        **** 
+  25:main.c        **** volatile int i = 0;
+  26:main.c        **** volatile int doIt = 0;
+  27:main.c        **** volatile int set_temp = 10;
+  28:main.c        **** 
+  29:main.c        **** 
+  30:main.c        **** 
+  31:main.c        **** /*/\/\/\/\/\/\/\/\/\/\/\/\/\INITS/\/\/\/\/\/\/\/\/\/\/\/\/\*/
+  32:main.c        **** /*--------------------HARDWARE INIT --------------------*/
+  33:main.c        **** void hardware_init(void){
+  23               		.loc 1 33 25 view -0
+  24               		.cfi_startproc
+  25               	/* prologue: function */
+  26               	/* frame size = 0 */
+  27               	/* stack size = 0 */
+  28               	.L__stack_usage = 0
+  34:main.c        ****     DDRB = 0b00000000;  	// portb bits 0,3,4 output; 1,2 in
+  29               		.loc 1 34 4 view .LVU1
+  30               		.loc 1 34 9 is_stmt 0 view .LVU2
+  31 0000 17BA      		out 0x17,__zero_reg__
+  35:main.c        ****     //DRAW GUI
+  36:main.c        ****     ssd1306_init();
+  32               		.loc 1 36 5 is_stmt 1 view .LVU3
+  33 0002 00D0      		rcall ssd1306_init
+  34               	.LVL0:
+  37:main.c        ****     ssd1306tx_init(ssd1306xled_font6x8data, ' ');
+  35               		.loc 1 37 5 view .LVU4
+  36 0004 60E2      		ldi r22,lo8(32)
+  37 0006 80E0      		ldi r24,lo8(ssd1306xled_font6x8data)
+  38 0008 90E0      		ldi r25,hi8(ssd1306xled_font6x8data)
+  39 000a 00D0      		rcall ssd1306tx_init
+  40               	.LVL1:
+  38:main.c        ****     ssd1306_clear();	// Clear the screen.
+  41               		.loc 1 38 5 view .LVU5
+  42 000c 20E0      		ldi r18,0
+  43 000e 40E0      		ldi r20,0
+  44 0010 60E0      		ldi r22,0
+  45 0012 80E0      		ldi r24,0
+  46 0014 00D0      		rcall ssd1306_fill4
+  47               	.LVL2:
+  39:main.c        **** 
+  40:main.c        ****     ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 0, "T:");
+  48               		.loc 1 40 5 view .LVU6
+  49 0016 20E0      		ldi r18,lo8(.LC0)
+  50 0018 30E0      		ldi r19,hi8(.LC0)
+  51 001a 40E0      		ldi r20,0
+  52 001c 60E0      		ldi r22,0
+  53 001e 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+  54 0020 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+  55 0022 00D0      		rcall ssd1306tx_stringxy
+  56               	.LVL3:
+  41:main.c        ****     ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 2, "F:");
+  57               		.loc 1 41 5 view .LVU7
+  58 0024 20E0      		ldi r18,lo8(.LC1)
+  59 0026 30E0      		ldi r19,hi8(.LC1)
+  60 0028 42E0      		ldi r20,lo8(2)
+  61 002a 60E0      		ldi r22,0
+  62 002c 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+  63 002e 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+  64 0030 00D0      		rcall ssd1306tx_stringxy
+  65               	.LVL4:
+  42:main.c        ****     ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 0, "Set:");
+  66               		.loc 1 42 5 view .LVU8
+  67 0032 20E0      		ldi r18,lo8(.LC2)
+  68 0034 30E0      		ldi r19,hi8(.LC2)
+  69 0036 40E0      		ldi r20,0
+  70 0038 60E6      		ldi r22,lo8(96)
+  71 003a 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+  72 003c 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+  73 003e 00C0      		rjmp ssd1306tx_stringxy
+  74               	.LVL5:
+  75               		.cfi_endproc
+  76               	.LFE7:
+  78               	.global	timer1_init
+  80               	timer1_init:
+  81               	.LFB8:
+  43:main.c        **** }
+  44:main.c        **** 
+  45:main.c        **** /*--------------------TIMER INIT --------------------*/
+  46:main.c        **** void timer1_init(void){
+  82               		.loc 1 46 23 view -0
+  83               		.cfi_startproc
+  84               	/* prologue: function */
+  85               	/* frame size = 0 */
+  86               	/* stack size = 0 */
+  87               	.L__stack_usage = 0
+  47:main.c        ****   TCCR0A = (1 << WGM01);             //CTC mode
+  88               		.loc 1 47 2 view .LVU10
+  89               		.loc 1 47 9 is_stmt 0 view .LVU11
+  90 0040 82E0      		ldi r24,lo8(2)
+  91 0042 8ABD      		out 0x2a,r24
+  48:main.c        ****   TCCR0B |= (1 << CS02) | (0 << CS01) | (1 << CS00); //clock prescaler 8192
+  92               		.loc 1 48 2 is_stmt 1 view .LVU12
+  93               		.loc 1 48 9 is_stmt 0 view .LVU13
+  94 0044 83B7      		in r24,0x33
+  95 0046 8560      		ori r24,lo8(5)
+  96 0048 83BF      		out 0x33,r24
+  49:main.c        ****   OCR0A = 122;    // 50us compare value
+  97               		.loc 1 49 2 is_stmt 1 view .LVU14
+  98               		.loc 1 49 8 is_stmt 0 view .LVU15
+  99 004a 8AE7      		ldi r24,lo8(122)
+ 100 004c 89BD      		out 0x29,r24
+  50:main.c        ****   TIMSK |= (1<<OCIE0A);              //if you want interrupt
+ 101               		.loc 1 50 2 is_stmt 1 view .LVU16
+ 102               		.loc 1 50 8 is_stmt 0 view .LVU17
+ 103 004e 89B7      		in r24,0x39
+ 104 0050 8061      		ori r24,lo8(16)
+ 105 0052 89BF      		out 0x39,r24
+ 106               	/* epilogue start */
+  51:main.c        **** }
+ 107               		.loc 1 51 1 view .LVU18
+ 108 0054 0895      		ret
+ 109               		.cfi_endproc
+ 110               	.LFE8:
+ 112               	.global	pin_change_init
+ 114               	pin_change_init:
+ 115               	.LFB9:
+  52:main.c        **** 
+  53:main.c        **** void pin_change_init(void){
+ 116               		.loc 1 53 27 is_stmt 1 view -0
+ 117               		.cfi_startproc
+ 118               	/* prologue: function */
+ 119               	/* frame size = 0 */
+ 120               	/* stack size = 0 */
+ 121               	.L__stack_usage = 0
+  54:main.c        ****   GIMSK |= (1 << PCIE);
+ 122               		.loc 1 54 2 view .LVU20
+ 123               		.loc 1 54 8 is_stmt 0 view .LVU21
+ 124 0056 8BB7      		in r24,0x3b
+ 125 0058 8062      		ori r24,lo8(32)
+ 126 005a 8BBF      		out 0x3b,r24
+  55:main.c        ****   PCMSK |= (1 << PCINT3) | (1 << PCINT4);
+ 127               		.loc 1 55 2 is_stmt 1 view .LVU22
+ 128               		.loc 1 55 8 is_stmt 0 view .LVU23
+ 129 005c 85B3      		in r24,0x15
+ 130 005e 8861      		ori r24,lo8(24)
+ 131 0060 85BB      		out 0x15,r24
+ 132               	/* epilogue start */
+  56:main.c        **** }
+ 133               		.loc 1 56 1 view .LVU24
+ 134 0062 0895      		ret
+ 135               		.cfi_endproc
+ 136               	.LFE9:
+ 138               	.global	__vector_10
+ 140               	__vector_10:
+ 141               	.LFB10:
+  57:main.c        **** 
+  58:main.c        **** 
+  59:main.c        **** /*/\/\/\/\/\/\/\/\/\/\/\/\/\FUNCTIONS/\/\/\/\/\/\/\/\/\/\/\/\/\*/
+  60:main.c        **** /*--------------------TIMER INTERRUPT RUN--------------------*/
+  61:main.c        **** ISR(TIMER0_COMPA_vect)
+  62:main.c        **** {
+ 142               		.loc 1 62 1 is_stmt 1 view -0
+ 143               		.cfi_startproc
+ 144 0064 1F92 1FB6 		__gcc_isr 1
+ 144      1F92 1124 
+ 144      8F93 
+ 145 006e 9F93      		push r25
+ 146               	.LCFI0:
+ 147               		.cfi_def_cfa_offset 3
+ 148               		.cfi_offset 25, -2
+ 149               	/* prologue: Signal */
+ 150               	/* frame size = 0 */
+ 151               	/* stack size = 1...5 */
+ 152               	.L__stack_usage = 1 + __gcc_isr.n_pushed
+  63:main.c        ****   //1 second is 7*i
+  64:main.c        ****   int seconds = 5;
+ 153               		.loc 1 64 3 view .LVU26
+ 154               	.LVL6:
+  65:main.c        ****   i++;
+ 155               		.loc 1 65 3 view .LVU27
+ 156               		.loc 1 65 4 is_stmt 0 view .LVU28
+ 157 0070 8091 0000 		lds r24,i
+ 158 0074 9091 0000 		lds r25,i+1
+ 159 0078 0196      		adiw r24,1
+ 160 007a 9093 0000 		sts i+1,r25
+ 161 007e 8093 0000 		sts i,r24
+  66:main.c        ****   if(i > seconds * 7){
+ 162               		.loc 1 66 3 is_stmt 1 view .LVU29
+ 163               		.loc 1 66 8 is_stmt 0 view .LVU30
+ 164 0082 8091 0000 		lds r24,i
+ 165 0086 9091 0000 		lds r25,i+1
+ 166               		.loc 1 66 5 view .LVU31
+ 167 008a 8432      		cpi r24,36
+ 168 008c 9105      		cpc r25,__zero_reg__
+ 169 008e 04F0      		brlt .L4
+  67:main.c        ****     doIt = 1;
+ 170               		.loc 1 67 5 is_stmt 1 view .LVU32
+ 171               		.loc 1 67 10 is_stmt 0 view .LVU33
+ 172 0090 81E0      		ldi r24,lo8(1)
+ 173 0092 90E0      		ldi r25,0
+ 174 0094 9093 0000 		sts doIt+1,r25
+ 175 0098 8093 0000 		sts doIt,r24
+  68:main.c        ****     i = 0;
+ 176               		.loc 1 68 5 is_stmt 1 view .LVU34
+ 177               		.loc 1 68 7 is_stmt 0 view .LVU35
+ 178 009c 1092 0000 		sts i+1,__zero_reg__
+ 179 00a0 1092 0000 		sts i,__zero_reg__
+ 180               	.L4:
+ 181               	/* epilogue start */
+  69:main.c        ****   }
+  70:main.c        **** }
+ 182               		.loc 1 70 1 view .LVU36
+ 183 00a4 9F91      		pop r25
+ 184 00a6 8F91 1F90 		__gcc_isr 2
+ 184      1FBE 1F90 
+ 185 00ae 1895      		reti
+ 186               		__gcc_isr 0,r24
+ 187               		.cfi_endproc
+ 188               	.LFE10:
+ 190               	.global	PCINT3_vect
+ 192               	PCINT3_vect:
+ 193               	.LFB11:
+  71:main.c        **** 
+  72:main.c        **** /*--------------------PIN CHANGE INTERRUPT RAISE--------------------*/
+  73:main.c        **** ISR(PCINT3_vect)
+  74:main.c        **** {
+ 194               		.loc 1 74 1 is_stmt 1 view -0
+ 195               		.cfi_startproc
+ 196 00b0 8F93      		__gcc_isr 1
+ 197 00b2 9F93      		push r25
+ 198               	.LCFI1:
+ 199               		.cfi_def_cfa_offset 3
+ 200               		.cfi_offset 25, -2
+ 201               	/* prologue: Signal */
+ 202               	/* frame size = 0 */
+ 203               	/* stack size = 1...5 */
+ 204               	.L__stack_usage = 1 + __gcc_isr.n_pushed
+  75:main.c        ****     set_temp = 12;             // Increment volatile variable
+ 205               		.loc 1 75 5 view .LVU38
+ 206               		.loc 1 75 14 is_stmt 0 view .LVU39
+ 207 00b4 8CE0      		ldi r24,lo8(12)
+ 208 00b6 90E0      		ldi r25,0
+ 209 00b8 9093 0000 		sts set_temp+1,r25
+ 210 00bc 8093 0000 		sts set_temp,r24
+ 211               	/* epilogue start */
+  76:main.c        **** }
+ 212               		.loc 1 76 1 view .LVU40
+ 213 00c0 9F91      		pop r25
+ 214 00c2 8F91      		__gcc_isr 2
+ 215 00c4 1895      		reti
+ 216               		__gcc_isr 0,r24
+ 217               		.cfi_endproc
+ 218               	.LFE11:
+ 220               	.global	PCINT4_vect
+ 222               	PCINT4_vect:
+ 223               	.LFB12:
+  77:main.c        **** 
+  78:main.c        **** /*--------------------PIN CHANGE INTERRUPT LOWER--------------------*/
+  79:main.c        **** ISR(PCINT4_vect)
+  80:main.c        **** {
+ 224               		.loc 1 80 1 is_stmt 1 view -0
+ 225               		.cfi_startproc
+ 226 00c6 8F93 8FB7 		__gcc_isr 1
+ 226      8F93 
+ 227 00cc 9F93      		push r25
+ 228               	.LCFI2:
+ 229               		.cfi_def_cfa_offset 3
+ 230               		.cfi_offset 25, -2
+ 231               	/* prologue: Signal */
+ 232               	/* frame size = 0 */
+ 233               	/* stack size = 1...5 */
+ 234               	.L__stack_usage = 1 + __gcc_isr.n_pushed
+  81:main.c        ****     set_temp--;             // Increment volatile variable
+ 235               		.loc 1 81 5 view .LVU42
+ 236               		.loc 1 81 13 is_stmt 0 view .LVU43
+ 237 00ce 8091 0000 		lds r24,set_temp
+ 238 00d2 9091 0000 		lds r25,set_temp+1
+ 239 00d6 0197      		sbiw r24,1
+ 240 00d8 9093 0000 		sts set_temp+1,r25
+ 241 00dc 8093 0000 		sts set_temp,r24
+ 242               	/* epilogue start */
+  82:main.c        **** }
+ 243               		.loc 1 82 1 view .LVU44
+ 244 00e0 9F91      		pop r25
+ 245 00e2 8F91 8FBF 		__gcc_isr 2
+ 245      8F91 
+ 246 00e8 1895      		reti
+ 247               		__gcc_isr 0,r24
+ 248               		.cfi_endproc
+ 249               	.LFE12:
+ 251               	.global	__floatsisf
+ 252               		.section	.rodata.str1.1
+ 253               	.LC3:
+ 254 000b 4300      		.string	"C"
+ 255               	.LC4:
+ 256 000d 2500      		.string	"%"
+ 257               		.section	.text.startup,"ax",@progbits
+ 258               	.global	main
+ 260               	main:
+ 261               	.LFB13:
+  83:main.c        **** 
+  84:main.c        **** /*/\/\/\/\/\/\/\/\/\/\/\/\/\MAIN LOOP/\/\/\/\/\/\/\/\/\/\/\/\/\*/
+  85:main.c        **** int main (void)
+  86:main.c        **** {
+ 262               		.loc 1 86 1 is_stmt 1 view -0
+ 263               		.cfi_startproc
+ 264 0000 CDB7      		in r28,__SP_L__
+ 265 0002 DEB7      		in r29,__SP_H__
+ 266               	.LCFI3:
+ 267               		.cfi_def_cfa_register 28
+ 268 0004 6297      		sbiw r28,18
+ 269               	.LCFI4:
+ 270               		.cfi_def_cfa_offset 20
+ 271 0006 0FB6      		in __tmp_reg__,__SREG__
+ 272 0008 F894      		cli
+ 273 000a DEBF      		out __SP_H__,r29
+ 274 000c 0FBE      		out __SREG__,__tmp_reg__
+ 275 000e CDBF      		out __SP_L__,r28
+ 276               	/* prologue: function */
+ 277               	/* frame size = 18 */
+ 278               	/* stack size = 18 */
+ 279               	.L__stack_usage = 18
+  87:main.c        ****   hardware_init();
+ 280               		.loc 1 87 3 view .LVU46
+ 281 0010 00D0      		rcall hardware_init
+ 282               	.LVL7:
+  88:main.c        ****   timer1_init();
+ 283               		.loc 1 88 3 view .LVU47
+ 284 0012 00D0      		rcall timer1_init
+ 285               	.LVL8:
+  89:main.c        ****   pin_change_init();
+ 286               		.loc 1 89 3 view .LVU48
+ 287 0014 00D0      		rcall pin_change_init
+ 288               	.LVL9:
+  90:main.c        ****   sei();
+ 289               		.loc 1 90 2 view .LVU49
+ 290               	/* #APP */
+ 291               	 ;  90 "main.c" 1
+ 292 0016 7894      		sei
+ 293               	 ;  0 "" 2
+ 294               	/* #NOAPP */
+ 295               	.LBB5:
+  91:main.c        **** 
+  92:main.c        **** 
+  93:main.c        ****   // temperature and humidity
+  94:main.c        ****   unsigned char ec; //Exit code
+  95:main.c        **** 	int temp, humid; //Temperature and humidity
+  96:main.c        ****   float temp_float, humid_float;
+  97:main.c        ****   char text[10];
+  98:main.c        ****   while(1){
+  99:main.c        ****     if(doIt == 1){
+ 100:main.c        ****       dhtxxconvert(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1));
+ 101:main.c        ****       _delay_ms(1000);
+ 102:main.c        ****       ec = dhtxxread(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1), &temp, &humid );
+ 103:main.c        **** 
+ 104:main.c        ****       temp_float = temp/10;
+ 105:main.c        ****       humid_float = humid/10;
+ 296               		.loc 1 105 26 is_stmt 0 view .LVU50
+ 297 0018 8AE0      		ldi r24,lo8(10)
+ 298 001a A82E      		mov r10,r24
+ 299 001c B12C      		mov r11,__zero_reg__
+ 300               	.L9:
+ 301               	.LBE5:
+  94:main.c        **** 	int temp, humid; //Temperature and humidity
+ 302               		.loc 1 94 3 is_stmt 1 view .LVU51
+  95:main.c        ****   float temp_float, humid_float;
+ 303               		.loc 1 95 2 view .LVU52
+  96:main.c        ****   char text[10];
+ 304               		.loc 1 96 3 view .LVU53
+  97:main.c        ****   while(1){
+ 305               		.loc 1 97 3 view .LVU54
+  98:main.c        ****     if(doIt == 1){
+ 306               		.loc 1 98 3 view .LVU55
+  99:main.c        ****       dhtxxconvert(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1));
+ 307               		.loc 1 99 5 view .LVU56
+  99:main.c        ****       dhtxxconvert(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1));
+ 308               		.loc 1 99 13 is_stmt 0 view .LVU57
+ 309 001e 8091 0000 		lds r24,doIt
+ 310 0022 9091 0000 		lds r25,doIt+1
+  99:main.c        ****       dhtxxconvert(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1));
+ 311               		.loc 1 99 7 view .LVU58
+ 312 0026 0197      		sbiw r24,1
+ 313 0028 01F4      		brne .L9
+ 314               	.LBB8:
+ 100:main.c        ****       _delay_ms(1000);
+ 315               		.loc 1 100 7 is_stmt 1 view .LVU59
+ 316 002a 02E0      		ldi r16,lo8(2)
+ 317 002c 26E3      		ldi r18,lo8(54)
+ 318 002e 30E0      		ldi r19,0
+ 319 0030 47E3      		ldi r20,lo8(55)
+ 320 0032 50E0      		ldi r21,0
+ 321 0034 68E3      		ldi r22,lo8(56)
+ 322 0036 70E0      		ldi r23,0
+ 323 0038 81E0      		ldi r24,lo8(1)
+ 324 003a 00D0      		rcall dhtxxconvert
+ 325               	.LVL10:
+ 101:main.c        ****       ec = dhtxxread(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1), &temp, &humid );
+ 326               		.loc 1 101 7 view .LVU60
+ 327               	.LBB6:
+ 328               	.LBI6:
+ 329               		.file 2 "/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h"
+   1:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /* Copyright (c) 2002, Marek Michalkiewicz
+   2:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Copyright (c) 2004,2005,2007 Joerg Wunsch
+   3:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Copyright (c) 2007  Florin-Viorel Petrov
+   4:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    All rights reserved.
+   5:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+   6:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Redistribution and use in source and binary forms, with or without
+   7:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    modification, are permitted provided that the following conditions are met:
+   8:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+   9:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    * Redistributions of source code must retain the above copyright
+  10:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer.
+  11:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  12:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    * Redistributions in binary form must reproduce the above copyright
+  13:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      notice, this list of conditions and the following disclaimer in
+  14:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      the documentation and/or other materials provided with the
+  15:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      distribution.
+  16:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  17:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    * Neither the name of the copyright holders nor the names of
+  18:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      contributors may be used to endorse or promote products derived
+  19:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****      from this software without specific prior written permission.
+  20:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  21:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  22:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  23:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  24:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  25:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  26:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  27:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  28:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  29:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  30:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  31:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   POSSIBILITY OF SUCH DAMAGE. */
+  32:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  33:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /* $Id: delay.h.in 2506 2016-02-08 10:05:45Z joerg_wunsch $ */
+  34:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  35:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef _UTIL_DELAY_H_
+  36:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #define _UTIL_DELAY_H_ 1
+  37:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  38:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef __DOXYGEN__
+  39:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #  ifndef __HAS_DELAY_CYCLES
+  40:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #    define __HAS_DELAY_CYCLES 1
+  41:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #  endif
+  42:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif  /* __DOXYGEN__ */
+  43:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  44:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #include <inttypes.h>
+  45:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #include <util/delay_basic.h>
+  46:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #include <math.h>
+  47:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  48:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /** \file */
+  49:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /** \defgroup util_delay <util/delay.h>: Convenience functions for busy-wait delay loops
+  50:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \code
+  51:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     #define F_CPU 1000000UL  // 1 MHz
+  52:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     //#define F_CPU 14.7456E6
+  53:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     #include <util/delay.h>
+  54:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \endcode
+  55:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  56:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \note As an alternative method, it is possible to pass the
+  57:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     F_CPU macro down to the compiler from the Makefile.
+  58:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     Obviously, in that case, no \c \#define statement should be
+  59:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     used.
+  60:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  61:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     The functions in this header file are wrappers around the basic
+  62:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     busy-wait functions from <util/delay_basic.h>.  They are meant as
+  63:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     convenience functions where actual time values can be specified
+  64:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     rather than a number of cycles to wait for.  The idea behind is
+  65:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     that compile-time constant expressions will be eliminated by
+  66:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     compiler optimization so floating-point expressions can be used
+  67:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     to calculate the number of delay cycles needed based on the CPU
+  68:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     frequency passed by the macro F_CPU.
+  69:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  70:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \note In order for these functions to work as intended, compiler
+  71:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     optimizations <em>must</em> be enabled, and the delay time
+  72:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     <em>must</em> be an expression that is a known constant at
+  73:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     compile-time.  If these requirements are not met, the resulting
+  74:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     delay will be much longer (and basically unpredictable), and
+  75:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     applications that otherwise do not use floating-point calculations
+  76:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     will experience severe code bloat by the floating-point library
+  77:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     routines linked into the application.
+  78:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  79:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     The functions available allow the specification of microsecond, and
+  80:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     millisecond delays directly, using the application-supplied macro
+  81:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     F_CPU as the CPU clock frequency (in Hertz).
+  82:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  83:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** */
+  84:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  85:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if !defined(__DOXYGEN__)
+  86:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** static __inline__ void _delay_us(double __us) __attribute__((__always_inline__));
+  87:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** static __inline__ void _delay_ms(double __ms) __attribute__((__always_inline__));
+  88:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+  89:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  90:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef F_CPU
+  91:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /* prevent compiler error by supplying a default */
+  92:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** # warning "F_CPU not defined for <util/delay.h>"
+  93:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /** \ingroup util_delay
+  94:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \def F_CPU
+  95:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     \brief CPU frequency in Hz
+  96:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+  97:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     The macro F_CPU specifies the CPU frequency to be considered by
+  98:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     the delay macros.  This macro is normally supplied by the
+  99:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     environment (e.g. from within a project header, or the project's
+ 100:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     Makefile).  The value 1 MHz here is only provided as a "vanilla"
+ 101:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     fallback if no such user-provided definition could be found.
+ 102:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 103:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     In terms of the delay functions, the CPU frequency can be given as
+ 104:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     a floating-point constant (e.g. 3.6864E6 for 3.6864 MHz).
+ 105:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     However, the macros in <util/setbaud.h> require it to be an
+ 106:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****     integer value.
+ 107:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****  */
+ 108:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** # define F_CPU 1000000UL
+ 109:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 110:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 111:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #ifndef __OPTIMIZE__
+ 112:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** # warning "Compiler optimizations disabled; functions from <util/delay.h> won't work as designed"
+ 113:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 114:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 115:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 116:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 117:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 118:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #  include <math.h>
+ 119:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #endif
+ 120:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 121:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** /**
+ 122:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \ingroup util_delay
+ 123:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 124:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Perform a delay of \c __ms milliseconds, using _delay_loop_2().
+ 125:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 126:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The macro F_CPU is supposed to be defined to a
+ 127:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    constant defining the CPU clock frequency (in Hertz).
+ 128:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 129:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The maximal possible delay is 262.14 ms / F_CPU in MHz.
+ 130:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 131:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    When the user request delay which exceed the maximum possible one,
+ 132:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    _delay_ms() provides a decreased resolution functionality. In this
+ 133:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    mode _delay_ms() will work with a resolution of 1/10 ms, providing
+ 134:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    delays up to 6.5535 seconds (independent from CPU frequency).  The
+ 135:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    user will not be informed about decreased resolution.
+ 136:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 137:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    If the avr-gcc toolchain has __builtin_avr_delay_cycles()
+ 138:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    support, maximal possible delay is 4294967.295 ms/ F_CPU in MHz. For
+ 139:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    values greater than the maximal possible delay, overflows results in
+ 140:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    no delay i.e., 0ms.
+ 141:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 142:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Conversion of \c __ms into clock cycles may not always result in
+ 143:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    integer.  By default, the clock cycles rounded up to next
+ 144:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    integer. This ensures that the user gets at least \c __ms
+ 145:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    microseconds of delay.
+ 146:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 147:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    Alternatively, by defining the macro \c __DELAY_ROUND_DOWN__, or
+ 148:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \c __DELAY_ROUND_CLOSEST__, before including this header file, the
+ 149:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    algorithm can be made to round down, or round to closest integer,
+ 150:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    respectively.
+ 151:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 152:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \note
+ 153:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 154:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    The implementation of _delay_ms() based on
+ 155:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    __builtin_avr_delay_cycles() is not backward compatible with older
+ 156:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    implementations.  In order to get functionality backward compatible
+ 157:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    with previous versions, the macro \c "__DELAY_BACKWARD_COMPATIBLE__"
+ 158:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    must be defined before including this header file. Also, the
+ 159:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    backward compatible algorithm will be chosen if the code is
+ 160:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    compiled in a <em>freestanding environment</em> (GCC option
+ 161:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    \c -ffreestanding), as the math functions required for rounding are
+ 162:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****    not available to the compiler then.
+ 163:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 164:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****  */
+ 165:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** void
+ 166:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** _delay_ms(double __ms)
+ 330               		.loc 2 166 1 view .LVU61
+ 331               	.LBB7:
+ 167:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** {
+ 168:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	double __tmp ;
+ 332               		.loc 2 168 2 view .LVU62
+ 169:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** #if __HAS_DELAY_CYCLES && defined(__OPTIMIZE__) && \
+ 170:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   !defined(__DELAY_BACKWARD_COMPATIBLE__) &&	   \
+ 171:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h ****   __STDC_HOSTED__
+ 172:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	uint32_t __ticks_dc;
+ 333               		.loc 2 172 2 view .LVU63
+ 173:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	extern void __builtin_avr_delay_cycles(unsigned long);
+ 334               		.loc 2 173 2 view .LVU64
+ 174:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__tmp = ((F_CPU) / 1e3) * __ms;
+ 335               		.loc 2 174 2 view .LVU65
+ 175:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 176:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#if defined(__DELAY_ROUND_DOWN__)
+ 177:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)fabs(__tmp);
+ 178:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 179:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#elif defined(__DELAY_ROUND_CLOSEST__)
+ 180:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(fabs(__tmp)+0.5);
+ 181:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 182:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#else
+ 183:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		//round up by default
+ 184:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+ 336               		.loc 2 184 3 view .LVU66
+ 185:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	#endif
+ 186:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 
+ 187:/usr/local/Cellar/avr-gcc/9.1.0/avr/include/util/delay.h **** 	__builtin_avr_delay_cycles(__ticks_dc);
+ 337               		.loc 2 187 2 view .LVU67
+ 338 003c 2FE3      		ldi r18,lo8(199999)
+ 339 003e 8DE0      		ldi r24,hi8(199999)
+ 340 0040 93E0      		ldi r25,hlo8(199999)
+ 341 0042 2150      	1:	subi r18,1
+ 342 0044 8040      		sbci r24,0
+ 343 0046 9040      		sbci r25,0
+ 344 0048 01F4      		brne 1b
+ 345 004a 00C0      		rjmp .
+ 346 004c 0000      		nop
+ 347               	.LVL11:
+ 348               		.loc 2 187 2 is_stmt 0 view .LVU68
+ 349               	.LBE7:
+ 350               	.LBE6:
+ 102:main.c        **** 
+ 351               		.loc 1 102 7 is_stmt 1 view .LVU69
+ 102:main.c        **** 
+ 352               		.loc 1 102 12 is_stmt 0 view .LVU70
+ 353 004e DE01      		movw r26,r28
+ 354 0050 1B96      		adiw r26,11
+ 355 0052 6D01      		movw r12,r26
+ 356 0054 CE01      		movw r24,r28
+ 357 0056 0D96      		adiw r24,13
+ 358 0058 7C01      		movw r14,r24
+ 359 005a 26E3      		ldi r18,lo8(54)
+ 360 005c 30E0      		ldi r19,0
+ 361 005e 47E3      		ldi r20,lo8(55)
+ 362 0060 50E0      		ldi r21,0
+ 363 0062 68E3      		ldi r22,lo8(56)
+ 364 0064 70E0      		ldi r23,0
+ 365 0066 81E0      		ldi r24,lo8(1)
+ 366 0068 00D0      		rcall dhtxxread
+ 367               	.LVL12:
+ 104:main.c        ****       humid_float = humid/10;
+ 368               		.loc 1 104 7 is_stmt 1 view .LVU71
+ 369               		.loc 1 105 7 view .LVU72
+ 370               		.loc 1 105 26 is_stmt 0 view .LVU73
+ 371 006a 8B85      		ldd r24,Y+11
+ 372 006c 9C85      		ldd r25,Y+12
+ 373 006e B501      		movw r22,r10
+ 374 0070 00D0      		rcall __divmodhi4
+ 375               		.loc 1 105 19 view .LVU74
+ 376 0072 CB01      		movw r24,r22
+ 377 0074 770F      		lsl r23
+ 378 0076 AA0B      		sbc r26,r26
+ 379 0078 BB0B      		sbc r27,r27
+ 380 007a 8F87      		std Y+15,r24
+ 381 007c 988B      		std Y+16,r25
+ 382 007e A98B      		std Y+17,r26
+ 383 0080 BA8B      		std Y+18,r27
+ 384 0082 BC01      		movw r22,r24
+ 385 0084 CD01      		movw r24,r26
+ 386 0086 00D0      		rcall __floatsisf
+ 387               	.LVL13:
+ 388               		.loc 1 105 19 view .LVU75
+ 389 0088 6B01      		movw r12,r22
+ 390 008a 7C01      		movw r14,r24
+ 391               	.LVL14:
+ 106:main.c        **** 
+ 107:main.c        ****       //PRINT TEMP
+ 108:main.c        ****       ssd1306tx_stringxy(ssd1306xled_font8x16data, 16, 0, dtostrf(temp_float, 4, 1, text));
+ 392               		.loc 1 108 7 is_stmt 1 view .LVU76
+ 104:main.c        ****       humid_float = humid/10;
+ 393               		.loc 1 104 24 is_stmt 0 view .LVU77
+ 394 008c 8D85      		ldd r24,Y+13
+ 395 008e 9E85      		ldd r25,Y+14
+ 396               	.LVL15:
+ 104:main.c        ****       humid_float = humid/10;
+ 397               		.loc 1 104 24 view .LVU78
+ 398 0090 B501      		movw r22,r10
+ 399 0092 00D0      		rcall __divmodhi4
+ 400               	.LVL16:
+ 104:main.c        ****       humid_float = humid/10;
+ 401               		.loc 1 104 18 view .LVU79
+ 402 0094 CB01      		movw r24,r22
+ 403 0096 770F      		lsl r23
+ 404 0098 AA0B      		sbc r26,r26
+ 405 009a BB0B      		sbc r27,r27
+ 406 009c 8F87      		std Y+15,r24
+ 407 009e 988B      		std Y+16,r25
+ 408 00a0 A98B      		std Y+17,r26
+ 409 00a2 BA8B      		std Y+18,r27
+ 410 00a4 BC01      		movw r22,r24
+ 411 00a6 CD01      		movw r24,r26
+ 412 00a8 00D0      		rcall __floatsisf
+ 413               	.LVL17:
+ 414               		.loc 1 108 59 view .LVU80
+ 415 00aa 8E01      		movw r16,r28
+ 416 00ac 0F5F      		subi r16,-1
+ 417 00ae 1F4F      		sbci r17,-1
+ 418 00b0 21E0      		ldi r18,lo8(1)
+ 419 00b2 30E0      		ldi r19,0
+ 420 00b4 44E0      		ldi r20,lo8(4)
+ 421 00b6 50E0      		ldi r21,0
+ 422 00b8 6F87      		std Y+15,r22
+ 423 00ba 788B      		std Y+16,r23
+ 424 00bc 898B      		std Y+17,r24
+ 425 00be 9A8B      		std Y+18,r25
+ 426 00c0 6F85      		ldd r22,Y+15
+ 427 00c2 7889      		ldd r23,Y+16
+ 428 00c4 8989      		ldd r24,Y+17
+ 429 00c6 9A89      		ldd r25,Y+18
+ 430 00c8 00D0      		rcall dtostrf
+ 431               	.LVL18:
+ 432 00ca 9C01      		movw r18,r24
+ 433               		.loc 1 108 7 view .LVU81
+ 434 00cc 40E0      		ldi r20,0
+ 435 00ce 60E1      		ldi r22,lo8(16)
+ 436 00d0 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+ 437 00d2 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+ 438 00d4 00D0      		rcall ssd1306tx_stringxy
+ 439               	.LVL19:
+ 109:main.c        ****       ssd1306tx_stringxy(ssd1306xled_font8x16data, 48, 0, "C");
+ 440               		.loc 1 109 7 is_stmt 1 view .LVU82
+ 441 00d6 20E0      		ldi r18,lo8(.LC3)
+ 442 00d8 30E0      		ldi r19,hi8(.LC3)
+ 443 00da 40E0      		ldi r20,0
+ 444 00dc 60E3      		ldi r22,lo8(48)
+ 445 00de 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+ 446 00e0 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+ 447 00e2 00D0      		rcall ssd1306tx_stringxy
+ 448               	.LVL20:
+ 110:main.c        **** 
+ 111:main.c        ****       //PRINT HUMID
+ 112:main.c        ****       ssd1306tx_stringxy(ssd1306xled_font8x16data, 16, 2, dtostrf(humid_float, 4, 1, text));
+ 449               		.loc 1 112 7 view .LVU83
+ 450               		.loc 1 112 59 is_stmt 0 view .LVU84
+ 451 00e4 21E0      		ldi r18,lo8(1)
+ 452 00e6 30E0      		ldi r19,0
+ 453 00e8 44E0      		ldi r20,lo8(4)
+ 454 00ea 50E0      		ldi r21,0
+ 455 00ec CF86      		std Y+15,r12
+ 456 00ee D88A      		std Y+16,r13
+ 457 00f0 E98A      		std Y+17,r14
+ 458 00f2 FA8A      		std Y+18,r15
+ 459 00f4 6F85      		ldd r22,Y+15
+ 460 00f6 7889      		ldd r23,Y+16
+ 461 00f8 8989      		ldd r24,Y+17
+ 462 00fa 9A89      		ldd r25,Y+18
+ 463 00fc 00D0      		rcall dtostrf
+ 464               	.LVL21:
+ 465 00fe 9C01      		movw r18,r24
+ 466               		.loc 1 112 7 view .LVU85
+ 467 0100 42E0      		ldi r20,lo8(2)
+ 468 0102 60E1      		ldi r22,lo8(16)
+ 469 0104 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+ 470 0106 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+ 471 0108 00D0      		rcall ssd1306tx_stringxy
+ 472               	.LVL22:
+ 113:main.c        ****       ssd1306tx_stringxy(ssd1306xled_font8x16data, 48, 2, "%");
+ 473               		.loc 1 113 7 is_stmt 1 view .LVU86
+ 474 010a 20E0      		ldi r18,lo8(.LC4)
+ 475 010c 30E0      		ldi r19,hi8(.LC4)
+ 476 010e 42E0      		ldi r20,lo8(2)
+ 477 0110 60E3      		ldi r22,lo8(48)
+ 478 0112 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+ 479 0114 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+ 480 0116 00D0      		rcall ssd1306tx_stringxy
+ 481               	.LVL23:
+ 114:main.c        **** 
+ 115:main.c        ****       //PRINT SET TEMP
+ 116:main.c        ****       ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 2, itoa(set_temp, text, 10));
+ 482               		.loc 1 116 7 view .LVU87
+ 483               		.loc 1 116 59 is_stmt 0 view .LVU88
+ 484 0118 8091 0000 		lds r24,set_temp
+ 485 011c 9091 0000 		lds r25,set_temp+1
+ 486 0120 4AE0      		ldi r20,lo8(10)
+ 487 0122 50E0      		ldi r21,0
+ 488 0124 B801      		movw r22,r16
+ 489 0126 00D0      		rcall itoa
+ 490               	.LVL24:
+ 491 0128 9C01      		movw r18,r24
+ 492               		.loc 1 116 7 view .LVU89
+ 493 012a 42E0      		ldi r20,lo8(2)
+ 494 012c 60E6      		ldi r22,lo8(96)
+ 495 012e 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+ 496 0130 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+ 497 0132 00D0      		rcall ssd1306tx_stringxy
+ 498               	.LVL25:
+ 117:main.c        ****       ssd1306tx_stringxy(ssd1306xled_font8x16data, 112, 2, "C");
+ 499               		.loc 1 117 7 is_stmt 1 view .LVU90
+ 500 0134 20E0      		ldi r18,lo8(.LC3)
+ 501 0136 30E0      		ldi r19,hi8(.LC3)
+ 502 0138 42E0      		ldi r20,lo8(2)
+ 503 013a 60E7      		ldi r22,lo8(112)
+ 504 013c 80E0      		ldi r24,lo8(ssd1306xled_font8x16data)
+ 505 013e 90E0      		ldi r25,hi8(ssd1306xled_font8x16data)
+ 506 0140 00D0      		rcall ssd1306tx_stringxy
+ 507               	.LVL26:
+ 508 0142 00C0      		rjmp .L9
+ 509               	.LBE8:
+ 510               		.cfi_endproc
+ 511               	.LFE13:
+ 513               	.global	set_temp
+ 514               		.data
+ 517               	set_temp:
+ 518 0000 0A00      		.word	10
+ 519               	.global	doIt
+ 520               		.section .bss
+ 523               	doIt:
+ 524 0000 0000      		.zero	2
+ 525               	.global	i
+ 528               	i:
+ 529 0002 0000      		.zero	2
+ 530               	.global	ssd1306xled_font8x16data
+ 531               		.section	.progmem.data,"a",@progbits
+ 534               	ssd1306xled_font8x16data:
+ 535 0000 00        		.string	""
+ 536 0001 00        		.string	""
+ 537 0002 00        		.string	""
+ 538 0003 00        		.string	""
+ 539 0004 00        		.string	""
+ 540 0005 00        		.string	""
+ 541 0006 00        		.string	""
+ 542 0007 00        		.string	""
+ 543 0008 00        		.string	""
+ 544 0009 00        		.string	""
+ 545 000a 00        		.string	""
+ 546 000b 00        		.string	""
+ 547 000c 00        		.string	""
+ 548 000d 00        		.string	""
+ 549 000e 00        		.string	""
+ 550 000f 00        		.string	""
+ 551 0010 00        		.string	""
+ 552 0011 00        		.string	""
+ 553 0012 00        		.string	""
+ 554 0013 F800      		.string	"\370"
+ 555 0015 00        		.string	""
+ 556 0016 00        		.string	""
+ 557 0017 00        		.string	""
+ 558 0018 00        		.string	""
+ 559 0019 00        		.string	""
+ 560 001a 00        		.string	""
+ 561 001b 3330 00   		.string	"30"
+ 562 001e 00        		.string	""
+ 563 001f 00        		.string	""
+ 564 0020 00        		.string	""
+ 565 0021 100C 0610 		.string	"\020\f\006\020\f\006"
+ 565      0C06 00
+ 566 0028 00        		.string	""
+ 567 0029 00        		.string	""
+ 568 002a 00        		.string	""
+ 569 002b 00        		.string	""
+ 570 002c 00        		.string	""
+ 571 002d 00        		.string	""
+ 572 002e 00        		.string	""
+ 573 002f 00        		.string	""
+ 574 0030 40C0 7840 		.string	"@\300x@\300x@"
+ 574      C078 4000 
+ 575 0038 043F 0404 		.string	"\004?\004\004?\004\004"
+ 575      3F04 0400 
+ 576 0040 00        		.string	""
+ 577 0041 7088 FC08 		.string	"p\210\374\b0"
+ 577      3000 
+ 578 0047 00        		.string	""
+ 579 0048 00        		.string	""
+ 580 0049 1820 FF21 		.string	"\030 \377!\036"
+ 580      1E00 
+ 581 004f 00        		.string	""
+ 582 0050 F008 F000 		.string	"\360\b\360"
+ 583 0054 E018 00   		.string	"\340\030"
+ 584 0057 00        		.string	""
+ 585 0058 00        		.string	""
+ 586 0059 211C 031E 		.string	"!\034\003\036!\036"
+ 586      211E 00
+ 587 0060 00        		.string	""
+ 588 0061 F008 8870 		.string	"\360\b\210p"
+ 588      00
+ 589 0066 00        		.string	""
+ 590 0067 00        		.string	""
+ 591 0068 1E21 2324 		.string	"\036!#$\031'!\020\020\026\016"
+ 591      1927 2110 
+ 591      1016 0E00 
+ 592 0074 00        		.string	""
+ 593 0075 00        		.string	""
+ 594 0076 00        		.string	""
+ 595 0077 00        		.string	""
+ 596 0078 00        		.string	""
+ 597 0079 00        		.string	""
+ 598 007a 00        		.string	""
+ 599 007b 00        		.string	""
+ 600 007c 00        		.string	""
+ 601 007d 00        		.string	""
+ 602 007e 00        		.string	""
+ 603 007f 00        		.string	""
+ 604 0080 00        		.string	""
+ 605 0081 00        		.string	""
+ 606 0082 00        		.string	""
+ 607 0083 E018 0402 		.string	"\340\030\004\002"
+ 607      00
+ 608 0088 00        		.string	""
+ 609 0089 00        		.string	""
+ 610 008a 00        		.string	""
+ 611 008b 0718 2040 		.string	"\007\030 @"
+ 611      00
+ 612 0090 00        		.string	""
+ 613 0091 0204 18E0 		.string	"\002\004\030\340"
+ 613      00
+ 614 0096 00        		.string	""
+ 615 0097 00        		.string	""
+ 616 0098 00        		.string	""
+ 617 0099 4020 1807 		.string	"@ \030\007"
+ 617      00
+ 618 009e 00        		.string	""
+ 619 009f 00        		.string	""
+ 620 00a0 4040 80F0 		.string	"@@\200\360\200@@"
+ 620      8040 4000 
+ 621 00a8 0202 010F 		.string	"\002\002\001\017\001\002\002"
+ 621      0102 0200 
+ 622 00b0 00        		.string	""
+ 623 00b1 00        		.string	""
+ 624 00b2 00        		.string	""
+ 625 00b3 F000      		.string	"\360"
+ 626 00b5 00        		.string	""
+ 627 00b6 00        		.string	""
+ 628 00b7 00        		.string	""
+ 629 00b8 0101 011F 		.string	"\001\001\001\037\001\001\001"
+ 629      0101 0100 
+ 630 00c0 00        		.string	""
+ 631 00c1 00        		.string	""
+ 632 00c2 00        		.string	""
+ 633 00c3 00        		.string	""
+ 634 00c4 00        		.string	""
+ 635 00c5 00        		.string	""
+ 636 00c6 00        		.string	""
+ 637 00c7 00        		.string	""
+ 638 00c8 80B0 7000 		.string	"\200\260p"
+ 639 00cc 00        		.string	""
+ 640 00cd 00        		.string	""
+ 641 00ce 00        		.string	""
+ 642 00cf 00        		.string	""
+ 643 00d0 00        		.string	""
+ 644 00d1 00        		.string	""
+ 645 00d2 00        		.string	""
+ 646 00d3 00        		.string	""
+ 647 00d4 00        		.string	""
+ 648 00d5 00        		.string	""
+ 649 00d6 00        		.string	""
+ 650 00d7 00        		.string	""
+ 651 00d8 00        		.string	""
+ 652 00d9 0101 0101 		.string	"\001\001\001\001\001\001\001"
+ 652      0101 0100 
+ 653 00e1 00        		.string	""
+ 654 00e2 00        		.string	""
+ 655 00e3 00        		.string	""
+ 656 00e4 00        		.string	""
+ 657 00e5 00        		.string	""
+ 658 00e6 00        		.string	""
+ 659 00e7 00        		.string	""
+ 660 00e8 00        		.string	""
+ 661 00e9 3030 00   		.string	"00"
+ 662 00ec 00        		.string	""
+ 663 00ed 00        		.string	""
+ 664 00ee 00        		.string	""
+ 665 00ef 00        		.string	""
+ 666 00f0 00        		.string	""
+ 667 00f1 00        		.string	""
+ 668 00f2 00        		.string	""
+ 669 00f3 00        		.string	""
+ 670 00f4 8060 1804 		.string	"\200`\030\004"
+ 670      00
+ 671 00f9 6018 0601 		.string	"`\030\006\001"
+ 671      00
+ 672 00fe 00        		.string	""
+ 673 00ff 00        		.string	""
+ 674 0100 00        		.string	""
+ 675 0101 E010 0808 		.string	"\340\020\b\b\020\340"
+ 675      10E0 00
+ 676 0108 00        		.string	""
+ 677 0109 0F10 2020 		.string	"\017\020  \020\017"
+ 677      100F 00
+ 678 0110 00        		.string	""
+ 679 0111 1010 F800 		.string	"\020\020\370"
+ 680 0115 00        		.string	""
+ 681 0116 00        		.string	""
+ 682 0117 00        		.string	""
+ 683 0118 00        		.string	""
+ 684 0119 2020 3F20 		.string	"  ?  "
+ 684      2000 
+ 685 011f 00        		.string	""
+ 686 0120 00        		.string	""
+ 687 0121 7008 0808 		.string	"p\b\b\b\210p"
+ 687      8870 00
+ 688 0128 00        		.string	""
+ 689 0129 3028 2422 		.string	"0($\"!0"
+ 689      2130 00
+ 690 0130 00        		.string	""
+ 691 0131 3008 8888 		.string	"0\b\210\210H0"
+ 691      4830 00
+ 692 0138 00        		.string	""
+ 693 0139 1820 2020 		.string	"\030   \021\016"
+ 693      110E 00
+ 694 0140 00        		.string	""
+ 695 0141 00        		.string	""
+ 696 0142 C020 10F8 		.string	"\300 \020\370"
+ 696      00
+ 697 0147 00        		.string	""
+ 698 0148 00        		.string	""
+ 699 0149 0704 2424 		.string	"\007\004$$?$"
+ 699      3F24 00
+ 700 0150 00        		.string	""
+ 701 0151 F808 8888 		.string	"\370\b\210\210\b\b"
+ 701      0808 00
+ 702 0158 00        		.string	""
+ 703 0159 1921 2020 		.string	"\031!  \021\016"
+ 703      110E 00
+ 704 0160 00        		.string	""
+ 705 0161 E010 8888 		.string	"\340\020\210\210\030"
+ 705      1800 
+ 706 0167 00        		.string	""
+ 707 0168 00        		.string	""
+ 708 0169 0F11 2020 		.string	"\017\021  \021\016"
+ 708      110E 00
+ 709 0170 00        		.string	""
+ 710 0171 3808 08C8 		.string	"8\b\b\3108\b"
+ 710      3808 00
+ 711 0178 00        		.string	""
+ 712 0179 00        		.string	""
+ 713 017a 00        		.string	""
+ 714 017b 3F00      		.string	"?"
+ 715 017d 00        		.string	""
+ 716 017e 00        		.string	""
+ 717 017f 00        		.string	""
+ 718 0180 00        		.string	""
+ 719 0181 7088 0808 		.string	"p\210\b\b\210p"
+ 719      8870 00
+ 720 0188 00        		.string	""
+ 721 0189 1C22 2121 		.string	"\034\"!!\"\034"
+ 721      221C 00
+ 722 0190 00        		.string	""
+ 723 0191 E010 0808 		.string	"\340\020\b\b\020\340"
+ 723      10E0 00
+ 724 0198 00        		.string	""
+ 725 0199 00        		.string	""
+ 726 019a 3122 2211 		.string	"1\"\"\021\017"
+ 726      0F00 
+ 727 01a0 00        		.string	""
+ 728 01a1 00        		.string	""
+ 729 01a2 00        		.string	""
+ 730 01a3 C0C0 00   		.string	"\300\300"
+ 731 01a6 00        		.string	""
+ 732 01a7 00        		.string	""
+ 733 01a8 00        		.string	""
+ 734 01a9 00        		.string	""
+ 735 01aa 00        		.string	""
+ 736 01ab 3030 00   		.string	"00"
+ 737 01ae 00        		.string	""
+ 738 01af 00        		.string	""
+ 739 01b0 00        		.string	""
+ 740 01b1 00        		.string	""
+ 741 01b2 00        		.string	""
+ 742 01b3 8000      		.string	"\200"
+ 743 01b5 00        		.string	""
+ 744 01b6 00        		.string	""
+ 745 01b7 00        		.string	""
+ 746 01b8 00        		.string	""
+ 747 01b9 00        		.string	""
+ 748 01ba 8060 00   		.string	"\200`"
+ 749 01bd 00        		.string	""
+ 750 01be 00        		.string	""
+ 751 01bf 00        		.string	""
+ 752 01c0 00        		.string	""
+ 753 01c1 00        		.string	""
+ 754 01c2 8040 2010 		.string	"\200@ \020\b"
+ 754      0800 
+ 755 01c8 00        		.string	""
+ 756 01c9 0102 0408 		.string	"\001\002\004\b\020 "
+ 756      1020 00
+ 757 01d0 4040 4040 		.string	"@@@@@@@"
+ 757      4040 4000 
+ 758 01d8 0404 0404 		.string	"\004\004\004\004\004\004\004"
+ 758      0404 0400 
+ 759 01e0 00        		.string	""
+ 760 01e1 0810 2040 		.string	"\b\020 @\200"
+ 760      8000 
+ 761 01e7 00        		.string	""
+ 762 01e8 00        		.string	""
+ 763 01e9 2010 0804 		.string	" \020\b\004\002\001"
+ 763      0201 00
+ 764 01f0 00        		.string	""
+ 765 01f1 7048 0808 		.string	"pH\b\b\b\360"
+ 765      08F0 00
+ 766 01f8 00        		.string	""
+ 767 01f9 00        		.string	""
+ 768 01fa 00        		.string	""
+ 769 01fb 3036 0100 		.string	"06\001"
+ 770 01ff 00        		.string	""
+ 771 0200 C030 C828 		.string	"\3000\310(\350\020\340"
+ 771      E810 E000 
+ 772 0208 0718 2724 		.string	"\007\030'$#\024\013"
+ 772      2314 0B00 
+ 773 0210 00        		.string	""
+ 774 0211 00        		.string	""
+ 775 0212 C038 E000 		.string	"\3008\340"
+ 776 0216 00        		.string	""
+ 777 0217 00        		.string	""
+ 778 0218 203C 2302 		.string	" <#\002\002'8 \b\370\210\210\210p"
+ 778      0227 3820 
+ 778      08F8 8888 
+ 778      8870 00
+ 779 0227 00        		.string	""
+ 780 0228 203F 2020 		.string	" ?   \021\016"
+ 780      2011 0E00 
+ 781 0230 C030 0808 		.string	"\3000\b\b\b\b8"
+ 781      0808 3800 
+ 782 0238 0718 2020 		.string	"\007\030   \020\b"
+ 782      2010 0800 
+ 783 0240 08F8 0808 		.string	"\b\370\b\b\b\020\340"
+ 783      0810 E000 
+ 784 0248 203F 2020 		.string	" ?   \020\017"
+ 784      2010 0F00 
+ 785 0250 08F8 8888 		.string	"\b\370\210\210\350\b\020"
+ 785      E808 1000 
+ 786 0258 203F 2020 		.string	" ?  # \030"
+ 786      2320 1800 
+ 787 0260 08F8 8888 		.string	"\b\370\210\210\350\b\020"
+ 787      E808 1000 
+ 788 0268 203F 2000 		.string	" ? "
+ 789 026c 0300      		.string	"\003"
+ 790 026e 00        		.string	""
+ 791 026f 00        		.string	""
+ 792 0270 C030 0808 		.string	"\3000\b\b\b8"
+ 792      0838 00
+ 793 0277 00        		.string	""
+ 794 0278 0718 2020 		.string	"\007\030  \"\036\002"
+ 794      221E 0200 
+ 795 0280 08F8 0800 		.string	"\b\370\b"
+ 796 0284 00        		.string	""
+ 797 0285 08F8 0820 		.string	"\b\370\b ?!\001\001!? "
+ 797      3F21 0101 
+ 797      213F 2000 
+ 798 0291 0808 F808 		.string	"\b\b\370\b\b"
+ 798      0800 
+ 799 0297 00        		.string	""
+ 800 0298 00        		.string	""
+ 801 0299 2020 3F20 		.string	"  ?  "
+ 801      2000 
+ 802 029f 00        		.string	""
+ 803 02a0 00        		.string	""
+ 804 02a1 00        		.string	""
+ 805 02a2 0808 F808 		.string	"\b\b\370\b\b"
+ 805      0800 
+ 806 02a8 C080 8080 		.string	"\300\200\200\200\177"
+ 806      7F00 
+ 807 02ae 00        		.string	""
+ 808 02af 00        		.string	""
+ 809 02b0 08F8 88C0 		.string	"\b\370\210\300(\030\b"
+ 809      2818 0800 
+ 810 02b8 203F 2001 		.string	" ? \001&8 "
+ 810      2638 2000 
+ 811 02c0 08F8 0800 		.string	"\b\370\b"
+ 812 02c4 00        		.string	""
+ 813 02c5 00        		.string	""
+ 814 02c6 00        		.string	""
+ 815 02c7 00        		.string	""
+ 816 02c8 203F 2020 		.string	" ?    0"
+ 816      2020 3000 
+ 817 02d0 08F8 F800 		.string	"\b\370\370"
+ 818 02d4 F8F8 0800 		.string	"\370\370\b"
+ 819 02d8 203F 00   		.string	" ?"
+ 820 02db 3F00      		.string	"?"
+ 821 02dd 3F20 00   		.string	"? "
+ 822 02e0 08F8 30C0 		.string	"\b\3700\300"
+ 822      00
+ 823 02e5 08F8 0820 		.string	"\b\370\b ? "
+ 823      3F20 00
+ 824 02ec 0718 3F00 		.string	"\007\030?"
+ 825 02f0 E010 0808 		.string	"\340\020\b\b\b\020\340"
+ 825      0810 E000 
+ 826 02f8 0F10 2020 		.string	"\017\020   \020\017"
+ 826      2010 0F00 
+ 827 0300 08F8 0808 		.string	"\b\370\b\b\b\b\360"
+ 827      0808 F000 
+ 828 0308 203F 2101 		.string	" ?!\001\001\001"
+ 828      0101 00
+ 829 030f 00        		.string	""
+ 830 0310 E010 0808 		.string	"\340\020\b\b\b\020\340"
+ 830      0810 E000 
+ 831 0318 0F18 2424 		.string	"\017\030$$8PO"
+ 831      3850 4F00 
+ 832 0320 08F8 8888 		.string	"\b\370\210\210\210\210p"
+ 832      8888 7000 
+ 833 0328 203F 2000 		.string	" ? "
+ 834 032c 030C 3020 		.string	"\003\f0 "
+ 834      00
+ 835 0331 7088 0808 		.string	"p\210\b\b\b8"
+ 835      0838 00
+ 836 0338 00        		.string	""
+ 837 0339 3820 2121 		.string	"8 !!\"\034"
+ 837      221C 00
+ 838 0340 1808 08F8 		.string	"\030\b\b\370\b\b\030"
+ 838      0808 1800 
+ 839 0348 00        		.string	""
+ 840 0349 00        		.string	""
+ 841 034a 203F 2000 		.string	" ? "
+ 842 034e 00        		.string	""
+ 843 034f 00        		.string	""
+ 844 0350 08F8 0800 		.string	"\b\370\b"
+ 845 0354 00        		.string	""
+ 846 0355 08F8 0800 		.string	"\b\370\b"
+ 847 0359 1F20 2020 		.string	"\037    \037"
+ 847      201F 00
+ 848 0360 0878 8800 		.string	"\bx\210"
+ 849 0364 00        		.string	""
+ 850 0365 C838 0800 		.string	"\3108\b"
+ 851 0369 00        		.string	""
+ 852 036a 0738 0E01 		.string	"\0078\016\001"
+ 852      00
+ 853 036f 00        		.string	""
+ 854 0370 F808 00   		.string	"\370\b"
+ 855 0373 F800      		.string	"\370"
+ 856 0375 08F8 00   		.string	"\b\370"
+ 857 0378 033C 0700 		.string	"\003<\007"
+ 858 037c 073C 0300 		.string	"\007<\003"
+ 859 0380 0818 6880 		.string	"\b\030h\200\200h\030\b 0,\003\003,0 \b8\310"
+ 859      8068 1808 
+ 859      2030 2C03 
+ 859      032C 3020 
+ 859      0838 C800 
+ 860 0394 C838 0800 		.string	"\3108\b"
+ 861 0398 00        		.string	""
+ 862 0399 00        		.string	""
+ 863 039a 203F 2000 		.string	" ? "
+ 864 039e 00        		.string	""
+ 865 039f 00        		.string	""
+ 866 03a0 1008 0808 		.string	"\020\b\b\b\3108\b"
+ 866      C838 0800 
+ 867 03a8 2038 2621 		.string	" 8&!  \030"
+ 867      2020 1800 
+ 868 03b0 00        		.string	""
+ 869 03b1 00        		.string	""
+ 870 03b2 00        		.string	""
+ 871 03b3 FE02 0202 		.string	"\376\002\002\002"
+ 871      00
+ 872 03b8 00        		.string	""
+ 873 03b9 00        		.string	""
+ 874 03ba 00        		.string	""
+ 875 03bb 7F40 4040 		.string	"\177@@@"
+ 875      00
+ 876 03c0 00        		.string	""
+ 877 03c1 0C30 C000 		.string	"\f0\300"
+ 878 03c5 00        		.string	""
+ 879 03c6 00        		.string	""
+ 880 03c7 00        		.string	""
+ 881 03c8 00        		.string	""
+ 882 03c9 00        		.string	""
+ 883 03ca 00        		.string	""
+ 884 03cb 0106 38C0 		.string	"\001\0068\300"
+ 884      00
+ 885 03d0 00        		.string	""
+ 886 03d1 0202 02FE 		.string	"\002\002\002\376"
+ 886      00
+ 887 03d6 00        		.string	""
+ 888 03d7 00        		.string	""
+ 889 03d8 00        		.string	""
+ 890 03d9 4040 407F 		.string	"@@@\177"
+ 890      00
+ 891 03de 00        		.string	""
+ 892 03df 00        		.string	""
+ 893 03e0 00        		.string	""
+ 894 03e1 00        		.string	""
+ 895 03e2 0402 0202 		.string	"\004\002\002\002\004"
+ 895      0400 
+ 896 03e8 00        		.string	""
+ 897 03e9 00        		.string	""
+ 898 03ea 00        		.string	""
+ 899 03eb 00        		.string	""
+ 900 03ec 00        		.string	""
+ 901 03ed 00        		.string	""
+ 902 03ee 00        		.string	""
+ 903 03ef 00        		.string	""
+ 904 03f0 00        		.string	""
+ 905 03f1 00        		.string	""
+ 906 03f2 00        		.string	""
+ 907 03f3 00        		.string	""
+ 908 03f4 00        		.string	""
+ 909 03f5 00        		.string	""
+ 910 03f6 00        		.string	""
+ 911 03f7 00        		.string	""
+ 912 03f8 8080 8080 		.string	"\200\200\200\200\200\200\200\200"
+ 912      8080 8080 
+ 912      00
+ 913 0401 0202 0400 		.string	"\002\002\004"
+ 914 0405 00        		.string	""
+ 915 0406 00        		.string	""
+ 916 0407 00        		.string	""
+ 917 0408 00        		.string	""
+ 918 0409 00        		.string	""
+ 919 040a 00        		.string	""
+ 920 040b 00        		.string	""
+ 921 040c 00        		.string	""
+ 922 040d 00        		.string	""
+ 923 040e 00        		.string	""
+ 924 040f 00        		.string	""
+ 925 0410 00        		.string	""
+ 926 0411 00        		.string	""
+ 927 0412 8080 8080 		.string	"\200\200\200\200"
+ 927      00
+ 928 0417 00        		.string	""
+ 929 0418 00        		.string	""
+ 930 0419 1924 2222 		.string	"\031$\"\"\"? \b\370"
+ 930      223F 2008 
+ 930      F800 
+ 931 0423 8080 00   		.string	"\200\200"
+ 932 0426 00        		.string	""
+ 933 0427 00        		.string	""
+ 934 0428 00        		.string	""
+ 935 0429 3F11 2020 		.string	"?\021  \021\016"
+ 935      110E 00
+ 936 0430 00        		.string	""
+ 937 0431 00        		.string	""
+ 938 0432 00        		.string	""
+ 939 0433 8080 8000 		.string	"\200\200\200"
+ 940 0437 00        		.string	""
+ 941 0438 00        		.string	""
+ 942 0439 0E11 2020 		.string	"\016\021   \021"
+ 942      2011 00
+ 943 0440 00        		.string	""
+ 944 0441 00        		.string	""
+ 945 0442 00        		.string	""
+ 946 0443 8080 88F8 		.string	"\200\200\210\370"
+ 946      00
+ 947 0448 00        		.string	""
+ 948 0449 0E11 2020 		.string	"\016\021  \020? "
+ 948      103F 2000 
+ 949 0451 00        		.string	""
+ 950 0452 8080 8080 		.string	"\200\200\200\200"
+ 950      00
+ 951 0457 00        		.string	""
+ 952 0458 00        		.string	""
+ 953 0459 1F22 2222 		.string	"\037\"\"\"\"\023"
+ 953      2213 00
+ 954 0460 00        		.string	""
+ 955 0461 8080 F088 		.string	"\200\200\360\210\210\210\030"
+ 955      8888 1800 
+ 956 0469 2020 3F20 		.string	"  ?  "
+ 956      2000 
+ 957 046f 00        		.string	""
+ 958 0470 00        		.string	""
+ 959 0471 00        		.string	""
+ 960 0472 8080 8080 		.string	"\200\200\200\200\200"
+ 960      8000 
+ 961 0478 00        		.string	""
+ 962 0479 6B94 9494 		.string	"k\224\224\224\223`"
+ 962      9360 00
+ 963 0480 08F8 00   		.string	"\b\370"
+ 964 0483 8080 8000 		.string	"\200\200\200"
+ 965 0487 00        		.string	""
+ 966 0488 203F 2100 		.string	" ?!"
+ 967 048c 00        		.string	""
+ 968 048d 203F 2000 		.string	" ? "
+ 969 0491 8098 9800 		.string	"\200\230\230"
+ 970 0495 00        		.string	""
+ 971 0496 00        		.string	""
+ 972 0497 00        		.string	""
+ 973 0498 00        		.string	""
+ 974 0499 2020 3F20 		.string	"  ?  "
+ 974      2000 
+ 975 049f 00        		.string	""
+ 976 04a0 00        		.string	""
+ 977 04a1 00        		.string	""
+ 978 04a2 00        		.string	""
+ 979 04a3 8098 9800 		.string	"\200\230\230"
+ 980 04a7 00        		.string	""
+ 981 04a8 00        		.string	""
+ 982 04a9 C080 8080 		.string	"\300\200\200\200\177"
+ 982      7F00 
+ 983 04af 00        		.string	""
+ 984 04b0 08F8 00   		.string	"\b\370"
+ 985 04b3 00        		.string	""
+ 986 04b4 8080 8000 		.string	"\200\200\200"
+ 987 04b8 203F 2402 		.string	" ?$\002-0 "
+ 987      2D30 2000 
+ 988 04c0 00        		.string	""
+ 989 04c1 0808 F800 		.string	"\b\b\370"
+ 990 04c5 00        		.string	""
+ 991 04c6 00        		.string	""
+ 992 04c7 00        		.string	""
+ 993 04c8 00        		.string	""
+ 994 04c9 2020 3F20 		.string	"  ?  "
+ 994      2000 
+ 995 04cf 00        		.string	""
+ 996 04d0 8080 8080 		.string	"\200\200\200\200\200\200\200"
+ 996      8080 8000 
+ 997 04d8 203F 2000 		.string	" ? "
+ 998 04dc 3F20 00   		.string	"? "
+ 999 04df 3F80 8000 		.string	"?\200\200"
+ 1000 04e3 8080 8000 		.string	"\200\200\200"
+ 1001 04e7 00        		.string	""
+ 1002 04e8 203F 2100 		.string	" ?!"
+ 1003 04ec 00        		.string	""
+ 1004 04ed 203F 2000 		.string	" ? "
+ 1005 04f1 00        		.string	""
+ 1006 04f2 8080 8080 		.string	"\200\200\200\200"
+ 1006      00
+ 1007 04f7 00        		.string	""
+ 1008 04f8 00        		.string	""
+ 1009 04f9 1F20 2020 		.string	"\037    \037"
+ 1009      201F 00
+ 1010 0500 8080 00   		.string	"\200\200"
+ 1011 0503 8080 00   		.string	"\200\200"
+ 1012 0506 00        		.string	""
+ 1013 0507 00        		.string	""
+ 1014 0508 80FF A120 		.string	"\200\377\241  \021\016"
+ 1014      2011 0E00 
+ 1015 0510 00        		.string	""
+ 1016 0511 00        		.string	""
+ 1017 0512 00        		.string	""
+ 1018 0513 8080 8080 		.string	"\200\200\200\200"
+ 1018      00
+ 1019 0518 00        		.string	""
+ 1020 0519 0E11 2020 		.string	"\016\021  \240\377\200\200\200\200"
+ 1020      A0FF 8080 
+ 1020      8080 00
+ 1021 0524 8080 8000 		.string	"\200\200\200"
+ 1022 0528 2020 3F21 		.string	"  ?! "
+ 1022      2000 
+ 1023 052e 0100      		.string	"\001"
+ 1024 0530 00        		.string	""
+ 1025 0531 00        		.string	""
+ 1026 0532 8080 8080 		.string	"\200\200\200\200\200"
+ 1026      8000 
+ 1027 0538 00        		.string	""
+ 1028 0539 3324 2424 		.string	"3$$$$\031"
+ 1028      2419 00
+ 1029 0540 00        		.string	""
+ 1030 0541 8080 E080 		.string	"\200\200\340\200\200"
+ 1030      8000 
+ 1031 0547 00        		.string	""
+ 1032 0548 00        		.string	""
+ 1033 0549 00        		.string	""
+ 1034 054a 00        		.string	""
+ 1035 054b 1F20 2000 		.string	"\037  "
+ 1036 054f 00        		.string	""
+ 1037 0550 8080 00   		.string	"\200\200"
+ 1038 0553 00        		.string	""
+ 1039 0554 00        		.string	""
+ 1040 0555 8080 00   		.string	"\200\200"
+ 1041 0558 00        		.string	""
+ 1042 0559 1F20 2020 		.string	"\037   \020? \200\200\200"
+ 1042      103F 2080 
+ 1042      8080 00
+ 1043 0564 00        		.string	""
+ 1044 0565 8080 8000 		.string	"\200\200\200"
+ 1045 0569 010E 3008 		.string	"\001\0160\b\006\001"
+ 1045      0601 00
+ 1046 0570 8080 00   		.string	"\200\200"
+ 1047 0573 8000      		.string	"\200"
+ 1048 0575 8080 800F 		.string	"\200\200\200\0170\f\003\f0\017"
+ 1048      300C 030C 
+ 1048      300F 00
+ 1049 0580 00        		.string	""
+ 1050 0581 8080 00   		.string	"\200\200"
+ 1051 0584 8080 8000 		.string	"\200\200\200"
+ 1052 0588 00        		.string	""
+ 1053 0589 2031 2E0E 		.string	" 1.\0161 "
+ 1053      3120 00
+ 1054 0590 8080 8000 		.string	"\200\200\200"
+ 1055 0594 00        		.string	""
+ 1056 0595 8080 8080 		.string	"\200\200\200\200\201\216p\030\006\001"
+ 1056      818E 7018 
+ 1056      0601 00
+ 1057 05a0 00        		.string	""
+ 1058 05a1 8080 8080 		.string	"\200\200\200\200\200\200"
+ 1058      8080 00
+ 1059 05a8 00        		.string	""
+ 1060 05a9 2130 2C22 		.string	"!0,\"!0"
+ 1060      2130 00
+ 1061 05b0 00        		.string	""
+ 1062 05b1 00        		.string	""
+ 1063 05b2 00        		.string	""
+ 1064 05b3 00        		.string	""
+ 1065 05b4 807C 0202 		.string	"\200|\002\002"
+ 1065      00
+ 1066 05b9 00        		.string	""
+ 1067 05ba 00        		.string	""
+ 1068 05bb 00        		.string	""
+ 1069 05bc 00        		.string	""
+ 1070 05bd 3F40 4000 		.string	"?@@"
+ 1071 05c1 00        		.string	""
+ 1072 05c2 00        		.string	""
+ 1073 05c3 00        		.string	""
+ 1074 05c4 FF00      		.string	"\377"
+ 1075 05c6 00        		.string	""
+ 1076 05c7 00        		.string	""
+ 1077 05c8 00        		.string	""
+ 1078 05c9 00        		.string	""
+ 1079 05ca 00        		.string	""
+ 1080 05cb 00        		.string	""
+ 1081 05cc FF00      		.string	"\377"
+ 1082 05ce 00        		.string	""
+ 1083 05cf 00        		.string	""
+ 1084 05d0 00        		.string	""
+ 1085 05d1 0202 7C80 		.string	"\002\002|\200"
+ 1085      00
+ 1086 05d6 00        		.string	""
+ 1087 05d7 00        		.string	""
+ 1088 05d8 00        		.string	""
+ 1089 05d9 4040 3F00 		.string	"@@?"
+ 1090 05dd 00        		.string	""
+ 1091 05de 00        		.string	""
+ 1092 05df 00        		.string	""
+ 1093 05e0 00        		.string	""
+ 1094 05e1 0601 0102 		.string	"\006\001\001\002\002\004\004"
+ 1094      0204 0400 
+ 1095 05e9 00        		.string	""
+ 1096 05ea 00        		.string	""
+ 1097 05eb 00        		.string	""
+ 1098 05ec 00        		.string	""
+ 1099 05ed 00        		.string	""
+ 1100 05ee 00        		.string	""
+ 1101 05ef 00        		.string	""
+ 1102               	.global	ssd1306xled_font6x8data
+ 1105               	ssd1306xled_font6x8data:
+ 1106 05f0 00        		.string	""
+ 1107 05f1 00        		.string	""
+ 1108 05f2 00        		.string	""
+ 1109 05f3 00        		.string	""
+ 1110 05f4 00        		.string	""
+ 1111 05f5 00        		.string	""
+ 1112 05f6 00        		.string	""
+ 1113 05f7 00        		.string	""
+ 1114 05f8 00        		.string	""
+ 1115 05f9 2F00      		.string	"/"
+ 1116 05fb 00        		.string	""
+ 1117 05fc 00        		.string	""
+ 1118 05fd 00        		.string	""
+ 1119 05fe 0700      		.string	"\007"
+ 1120 0600 0700      		.string	"\007"
+ 1121 0602 00        		.string	""
+ 1122 0603 147F 147F 		.string	"\024\177\024\177\024"
+ 1122      1400 
+ 1123 0609 242A 7F2A 		.string	"$*\177*\022"
+ 1123      1200 
+ 1124 060f 6264 0813 		.string	"bd\b\023#"
+ 1124      2300 
+ 1125 0615 3649 5522 		.string	"6IU\"P"
+ 1125      5000 
+ 1126 061b 00        		.string	""
+ 1127 061c 0503 00   		.string	"\005\003"
+ 1128 061f 00        		.string	""
+ 1129 0620 00        		.string	""
+ 1130 0621 00        		.string	""
+ 1131 0622 1C22 4100 		.string	"\034\"A"
+ 1132 0626 00        		.string	""
+ 1133 0627 00        		.string	""
+ 1134 0628 4122 1C00 		.string	"A\"\034"
+ 1135 062c 00        		.string	""
+ 1136 062d 1408 3E08 		.string	"\024\b>\b\024"
+ 1136      1400 
+ 1137 0633 0808 3E08 		.string	"\b\b>\b\b"
+ 1137      0800 
+ 1138 0639 00        		.string	""
+ 1139 063a 00        		.string	""
+ 1140 063b A060 00   		.string	"\240`"
+ 1141 063e 00        		.string	""
+ 1142 063f 0808 0808 		.string	"\b\b\b\b\b"
+ 1142      0800 
+ 1143 0645 00        		.string	""
+ 1144 0646 6060 00   		.string	"``"
+ 1145 0649 00        		.string	""
+ 1146 064a 00        		.string	""
+ 1147 064b 2010 0804 		.string	" \020\b\004\002"
+ 1147      0200 
+ 1148 0651 3E51 4945 		.string	">QIE>"
+ 1148      3E00 
+ 1149 0657 00        		.string	""
+ 1150 0658 427F 4000 		.string	"B\177@"
+ 1151 065c 00        		.string	""
+ 1152 065d 4261 5149 		.string	"BaQIF"
+ 1152      4600 
+ 1153 0663 2141 454B 		.string	"!AEK1"
+ 1153      3100 
+ 1154 0669 1814 127F 		.string	"\030\024\022\177\020"
+ 1154      1000 
+ 1155 066f 2745 4545 		.string	"'EEE9"
+ 1155      3900 
+ 1156 0675 3C4A 4949 		.string	"<JII0"
+ 1156      3000 
+ 1157 067b 0171 0905 		.string	"\001q\t\005\003"
+ 1157      0300 
+ 1158 0681 3649 4949 		.string	"6III6"
+ 1158      3600 
+ 1159 0687 0649 4929 		.string	"\006II)\036"
+ 1159      1E00 
+ 1160 068d 00        		.string	""
+ 1161 068e 3636 00   		.string	"66"
+ 1162 0691 00        		.string	""
+ 1163 0692 00        		.string	""
+ 1164 0693 00        		.string	""
+ 1165 0694 5636 00   		.string	"V6"
+ 1166 0697 00        		.string	""
+ 1167 0698 00        		.string	""
+ 1168 0699 0814 2241 		.string	"\b\024\"A"
+ 1168      00
+ 1169 069e 00        		.string	""
+ 1170 069f 1414 1414 		.string	"\024\024\024\024\024"
+ 1170      1400 
+ 1171 06a5 00        		.string	""
+ 1172 06a6 4122 1408 		.string	"A\"\024\b"
+ 1172      00
+ 1173 06ab 0201 5109 		.string	"\002\001Q\t\006"
+ 1173      0600 
+ 1174 06b1 3249 5951 		.string	"2IYQ>"
+ 1174      3E00 
+ 1175 06b7 7C12 1112 		.string	"|\022\021\022|"
+ 1175      7C00 
+ 1176 06bd 7F49 4949 		.string	"\177III6"
+ 1176      3600 
+ 1177 06c3 3E41 4141 		.string	">AAA\""
+ 1177      2200 
+ 1178 06c9 7F41 4122 		.string	"\177AA\"\034"
+ 1178      1C00 
+ 1179 06cf 7F49 4949 		.string	"\177IIIA"
+ 1179      4100 
+ 1180 06d5 7F09 0909 		.string	"\177\t\t\t\001"
+ 1180      0100 
+ 1181 06db 3E41 4949 		.string	">AIIz"
+ 1181      7A00 
+ 1182 06e1 7F08 0808 		.string	"\177\b\b\b\177"
+ 1182      7F00 
+ 1183 06e7 00        		.string	""
+ 1184 06e8 417F 4100 		.string	"A\177A"
+ 1185 06ec 00        		.string	""
+ 1186 06ed 2040 413F 		.string	" @A?\001"
+ 1186      0100 
+ 1187 06f3 7F08 1422 		.string	"\177\b\024\"A"
+ 1187      4100 
+ 1188 06f9 7F40 4040 		.string	"\177@@@@"
+ 1188      4000 
+ 1189 06ff 7F02 0C02 		.string	"\177\002\f\002\177"
+ 1189      7F00 
+ 1190 0705 7F04 0810 		.string	"\177\004\b\020\177"
+ 1190      7F00 
+ 1191 070b 3E41 4141 		.string	">AAA>"
+ 1191      3E00 
+ 1192 0711 7F09 0909 		.string	"\177\t\t\t\006"
+ 1192      0600 
+ 1193 0717 3E41 5121 		.string	">AQ!^"
+ 1193      5E00 
+ 1194 071d 7F09 1929 		.string	"\177\t\031)F"
+ 1194      4600 
+ 1195 0723 4649 4949 		.string	"FIII1"
+ 1195      3100 
+ 1196 0729 0101 7F01 		.string	"\001\001\177\001\001"
+ 1196      0100 
+ 1197 072f 3F40 4040 		.string	"?@@@?"
+ 1197      3F00 
+ 1198 0735 1F20 4020 		.string	"\037 @ \037"
+ 1198      1F00 
+ 1199 073b 3F40 3840 		.string	"?@8@?"
+ 1199      3F00 
+ 1200 0741 6314 0814 		.string	"c\024\b\024c"
+ 1200      6300 
+ 1201 0747 0708 7008 		.string	"\007\bp\b\007"
+ 1201      0700 
+ 1202 074d 6151 4945 		.string	"aQIEC"
+ 1202      4300 
+ 1203 0753 00        		.string	""
+ 1204 0754 7F41 4100 		.string	"\177AA"
+ 1205 0758 00        		.string	""
+ 1206 0759 552A 552A 		.string	"U*U*U"
+ 1206      5500 
+ 1207 075f 00        		.string	""
+ 1208 0760 4141 7F00 		.string	"AA\177"
+ 1209 0764 00        		.string	""
+ 1210 0765 0402 0102 		.string	"\004\002\001\002\004"
+ 1210      0400 
+ 1211 076b 4040 4040 		.string	"@@@@@"
+ 1211      4000 
+ 1212 0771 00        		.string	""
+ 1213 0772 0102 0400 		.string	"\001\002\004"
+ 1214 0776 00        		.string	""
+ 1215 0777 2054 5454 		.string	" TTTx"
+ 1215      7800 
+ 1216 077d 7F48 4444 		.string	"\177HDD8"
+ 1216      3800 
+ 1217 0783 3844 4444 		.string	"8DDD "
+ 1217      2000 
+ 1218 0789 3844 4448 		.string	"8DDH\177"
+ 1218      7F00 
+ 1219 078f 3854 5454 		.string	"8TTT\030"
+ 1219      1800 
+ 1220 0795 087E 0901 		.string	"\b~\t\001\002"
+ 1220      0200 
+ 1221 079b 18A4 A4A4 		.string	"\030\244\244\244|"
+ 1221      7C00 
+ 1222 07a1 7F08 0404 		.string	"\177\b\004\004x"
+ 1222      7800 
+ 1223 07a7 00        		.string	""
+ 1224 07a8 447D 4000 		.string	"D}@"
+ 1225 07ac 00        		.string	""
+ 1226 07ad 4080 847D 		.string	"@\200\204}"
+ 1226      00
+ 1227 07b2 00        		.string	""
+ 1228 07b3 7F10 2844 		.string	"\177\020(D"
+ 1228      00
+ 1229 07b8 00        		.string	""
+ 1230 07b9 00        		.string	""
+ 1231 07ba 417F 4000 		.string	"A\177@"
+ 1232 07be 00        		.string	""
+ 1233 07bf 7C04 1804 		.string	"|\004\030\004x"
+ 1233      7800 
+ 1234 07c5 7C08 0404 		.string	"|\b\004\004x"
+ 1234      7800 
+ 1235 07cb 3844 4444 		.string	"8DDD8"
+ 1235      3800 
+ 1236 07d1 FC24 2424 		.string	"\374$$$\030"
+ 1236      1800 
+ 1237 07d7 1824 2418 		.string	"\030$$\030\374"
+ 1237      FC00 
+ 1238 07dd 7C08 0404 		.string	"|\b\004\004\b"
+ 1238      0800 
+ 1239 07e3 4854 5454 		.string	"HTTT "
+ 1239      2000 
+ 1240 07e9 043F 4440 		.string	"\004?D@ "
+ 1240      2000 
+ 1241 07ef 3C40 4020 		.string	"<@@ |"
+ 1241      7C00 
+ 1242 07f5 1C20 4020 		.string	"\034 @ \034"
+ 1242      1C00 
+ 1243 07fb 3C40 3040 		.string	"<@0@<"
+ 1243      3C00 
+ 1244 0801 4428 1028 		.string	"D(\020(D"
+ 1244      4400 
+ 1245 0807 1CA0 A0A0 		.string	"\034\240\240\240|"
+ 1245      7C00 
+ 1246 080d 4464 544C 		.ascii	"DdTLD\024\024\024\024\024\024"
+ 1246      4414 1414 
+ 1246      1414 14
+ 1247               		.text
+ 1248               	.Letext0:
+ 1249               		.file 3 "/usr/local/Cellar/avr-gcc/9.1.0/avr/include/stdint.h"
+ 1250               		.file 4 "ssd1306xledtx.h"
+ 1251               		.file 5 "font6x8.h"
+ 1252               		.file 6 "font8x16.h"
+ 1253               		.file 7 "dhtxx.h"
+ 1254               		.file 8 "ssd1306xled.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+              main.s:2      *ABS*:000000000000003e __SP_H__
+              main.s:3      *ABS*:000000000000003d __SP_L__
+              main.s:4      *ABS*:000000000000003f __SREG__
+              main.s:5      *ABS*:0000000000000000 __tmp_reg__
+              main.s:6      *ABS*:0000000000000001 __zero_reg__
+              main.s:20     .text:0000000000000000 hardware_init
+              main.s:1105   .progmem.data:00000000000005f0 ssd1306xled_font6x8data
+              main.s:534    .progmem.data:0000000000000000 ssd1306xled_font8x16data
+              main.s:80     .text:0000000000000040 timer1_init
+              main.s:114    .text:0000000000000056 pin_change_init
+              main.s:140    .text:0000000000000064 __vector_10
+                            *ABS*:0000000000000003 __gcc_isr.n_pushed.001
+              main.s:528    .bss:0000000000000002 i
+              main.s:523    .bss:0000000000000000 doIt
+              main.s:192    .text:00000000000000b0 PCINT3_vect
+                            *ABS*:0000000000000001 __gcc_isr.n_pushed.002
+              main.s:517    .data:0000000000000000 set_temp
+              main.s:222    .text:00000000000000c6 PCINT4_vect
+                            *ABS*:0000000000000002 __gcc_isr.n_pushed.003
+              main.s:260    .text.startup:0000000000000000 main
+
+UNDEFINED SYMBOLS
+ssd1306_init
+ssd1306tx_init
+ssd1306_fill4
+ssd1306tx_stringxy
+__floatsisf
+dhtxxconvert
+dhtxxread
+__divmodhi4
+dtostrf
+itoa
+__do_copy_data
+__do_clear_bss

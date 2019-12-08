@@ -38,7 +38,7 @@ TARGET =  main
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c ssd1306xled.c ssd1306xledtx.c num2str.c
+SRC = $(TARGET).c ssd1306xled.c ssd1306xledtx.c num2str.c dhtxx.c
 
 
 # List Assembler source files here.

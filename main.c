@@ -1,3 +1,14 @@
+/*
+ATTiny85
+
+         RST PB5|1   8|VCC
+Raise   ADC3 PB3|2   7|PB2   SCK OLED
+Lower   ADC2 PB4|3   6|PB1   DHT22
+             GND|4   5|PB0   SCL OLED
+
+*/
+
+
 #define F_CPU 1000000
 #include <avr/io.h>
 #include <util/delay.h>
@@ -7,39 +18,28 @@
 #include "ssd1306xledtx.h"
 #include "font6x8.h"
 #include "font8x16.h"
+#include "dhtxx.h"
+
+#define DHT_PIN 1 // pin of the DHT22 sensor
 
 volatile int i = 0;
 volatile int doIt = 0;
+volatile int set_temp = 10;
+
+
 
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\INITS/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 /*--------------------HARDWARE INIT --------------------*/
 void hardware_init(void){
-    DDRB = 0b00000001;
-    PORTB = 0b00000001;
-
+    DDRB = 0b00000000;  	// portb bits 0,3,4 output; 1,2 in
+    //DRAW GUI
     ssd1306_init();
     ssd1306tx_init(ssd1306xled_font6x8data, ' ');
     ssd1306_clear();	// Clear the screen.
 
-      ADMUX =
-              (0 << ADLAR) |     // don't left shift result
-              (0 << REFS2) |     // Sets ref. voltage to internal 1.1V
-              (1 << REFS1) |     // Sets ref. voltage to internal 1.1V
-              (0 << REFS0) |     // Sets ref. voltage to internal 1.1V
-              (0 << MUX3)  |     //Set ADC input
-              (0 << MUX2)  |     //Set ADC input
-              (1 << MUX1)  |     //Set ADC input
-              (1 << MUX0);       //Set ADC input
-
-              ADCSRA =
-              (1 << ADEN)  |     // Enable ADC
-              (1 << ADPS2) |     // set prescaler to 64, bit 2
-              (1 << ADPS1) |     // set prescaler to 64, bit 1
-              (0 << ADPS0);      // set prescaler to 64, bit 0
-
-      	 														/*-------------DECLARING PINS-------------*/
-      	 DDRB  |= 0b00000001;									// turn DB0 into output
-      	 PORTB |= 0b00000000;									// turns off all pins
+    ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 0, "T:");
+    ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 2, "F:");
+    ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 0, "Set:");
 }
 
 /*--------------------TIMER INIT --------------------*/
@@ -50,81 +50,35 @@ void timer1_init(void){
   TIMSK |= (1<<OCIE0A);              //if you want interrupt
 }
 
+void pin_change_init(void){
+  GIMSK |= (1 << PCIE);
+  PCMSK |= (1 << PCINT3) | (1 << PCINT4);
+}
+
 
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\FUNCTIONS/\/\/\/\/\/\/\/\/\/\/\/\/\*/
-/*--------------------ADC READING FUNCTION --------------------*/
-int read_ADC(uint8_t mux1, uint8_t mux0){
-  //REFS combinations for respective input:
-  // REFS(2:0) = [000], for input VCC
-  // REFS(2:0) = [001], for input AREF
-  // REFS(2:0) = [010], for input AREF
-
-  //refs combinations for respective input:
-  // MUX(3:0) = [0011], for input PB3
-  // MUX(3:0) = [0001], for input PB2
-  // MUX(3:0) = [0010], for input PB4
-  // MUX(3:0) = [0011], for internal band gap
-
-  ADMUX =
-          (0 << ADLAR) |     // don't left shift result
-          (0 << REFS2) |     // Sets ref. voltage to internal 1.1V
-          (0 << REFS1) |     // Sets ref. voltage to internal 1.1V
-          (0 << REFS0) |     // Sets ref. voltage to internal 1.1V
-          (0 << MUX3)  |     // use ADC3 for input (PB3), MUX bit 3
-          (0 << MUX2)  |     // use ADC3 for input (PB3), MUX bit 2
-          (mux1 << MUX1)  |     // use ADC3 for input (PB3), MUX bit 1
-          (mux0 << MUX0);       // use ADC3 for input (PB3), MUX bit 0
-
-  uint8_t adc_lobyte; // to hold the low byte of the ADC register (ADCL)
-  uint16_t raw_adc;
-
-  _delay_us(200);
-
-  ADCSRA |= (1 << ADSC);         // start ADC measurement
-  while (ADCSRA & (1 << ADSC) ); // wait till conversion complete
-
-  adc_lobyte = ADCL; // get the sample value from ADCL
-  raw_adc = ADCH<<8 | adc_lobyte;   // add lobyte and hibyte
-
-  return raw_adc;
-}
-
-/*--------------------VCC READING FUNCTION --------------------*/
-int read_VCC(){
-  ADMUX =
-          (0 << ADLAR) |     // don't left shift result
-          (0 << REFS2) |     // Sets ref. voltage to internal 1.1V
-          (0 << REFS1) |     // Sets ref. voltage to internal 1.1V
-          (0 << REFS0) |     // Sets ref. voltage to internal 1.1V
-          (1 << MUX3)  |     // use ADC3 for input (PB3), MUX bit 3
-          (1 << MUX2)  |     // use ADC3 for input (PB3), MUX bit 2
-          (0 << MUX1)  |     // use ADC3 for input (PB3), MUX bit 1
-          (0 << MUX0);       // use ADC3 for input (PB3), MUX bit 0
-
-  uint8_t adc_lobyte; // to hold the low byte of the ADC register (ADCL)
-  uint16_t raw_adc;
-
-  _delay_us(500);
-
-  ADCSRA |= (1 << ADSC);         // start ADC measurement
-  while (ADCSRA & (1 << ADSC) ); // wait till conversion complete
-
-  adc_lobyte = ADCL; // get the sample value from ADCL
-  raw_adc = ADCH<<8 | adc_lobyte;   // add lobyte and hibyte
-
-  return (1100UL*1023*0.96)/raw_adc;
-}
-
-
 /*--------------------TIMER INTERRUPT RUN--------------------*/
 ISR(TIMER0_COMPA_vect)
 {
+  //1 second is 7*i
+  int seconds = 2;
   i++;
-
-  if(i > 21){
+  if(i > seconds * 7){
     doIt = 1;
     i = 0;
   }
+}
+
+/*--------------------PIN CHANGE INTERRUPT RAISE--------------------*/
+ISR(PCINT3_vect)
+{
+    set_temp = 12;             // Increment volatile variable
+}
+
+/*--------------------PIN CHANGE INTERRUPT LOWER--------------------*/
+ISR(PCINT4_vect)
+{
+    set_temp--;             // Increment volatile variable
 }
 
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\MAIN LOOP/\/\/\/\/\/\/\/\/\/\/\/\/\*/
@@ -132,35 +86,35 @@ int main (void)
 {
   hardware_init();
   timer1_init();
+  pin_change_init();
   sei();
-  int vcc;
-  float millis;
-  float kelvin;
-  float celcius;
-  char celciusText[16];
 
-  ssd1306tx_stringxy(ssd1306xled_font8x16data, 0, 0, "T:   C");
 
+  // temperature and humidity
+  unsigned char ec; //Exit code
+	int temp, humid; //Temperature and humidity
+  float temp_float, humid_float;
+  char text[10];
   while(1){
     if(doIt == 1){
+      dhtxxconvert(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1));
+      _delay_ms(1000);
+      ec = dhtxxread(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1), &temp, &humid );
 
-      //MEASURE INTERNAL VOLTAGE
-      vcc = 0;
-      for(int i = 0; i < 3; i++){
-        vcc = vcc + read_VCC();
-      }
-      vcc = vcc/3;
+      temp_float = temp/10;
+      humid_float = humid/10;
 
-      //MEASURE TEMP SENSOR VOLTAGE
-      millis = 0;
-      for(int i = 0; i < 5; i++){
-        millis = millis + read_ADC(1,1);
-      }
-      millis = millis/5;
-      kelvin = (vcc*millis)/(1024*10);
-      celcius = kelvin - 273.15;
-      ssd1306tx_stringxy(ssd1306xled_font8x16data, 36, 0, dtostrf(celcius, 5, 1, celciusText));
-      doIt = 0;
+      //PRINT TEMP
+      ssd1306tx_stringxy(ssd1306xled_font8x16data, 16, 0, dtostrf(temp_float, 4, 1, text));
+      ssd1306tx_stringxy(ssd1306xled_font8x16data, 48, 0, "C");
+
+      //PRINT HUMID
+      ssd1306tx_stringxy(ssd1306xled_font8x16data, 16, 2, dtostrf(humid_float, 4, 1, text));
+      ssd1306tx_stringxy(ssd1306xled_font8x16data, 48, 2, "%");
+
+      //PRINT SET TEMP
+      ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 2, itoa(set_temp, text, 10));
+      ssd1306tx_stringxy(ssd1306xled_font8x16data, 112, 2, "C");
     }
 
   }
