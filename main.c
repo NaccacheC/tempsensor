@@ -22,16 +22,17 @@ Lower   ADC2 PB4|3   6|PB1   DHT22
 
 #define DHT_PIN 1 // pin of the DHT22 sensor
 
+volatile int run_temp_get = 0;
 volatile int i = 0;
-volatile int doIt = 0;
-volatile int set_temp = 10;
 
 
 
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\INITS/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 /*--------------------HARDWARE INIT --------------------*/
 void hardware_init(void){
-    DDRB = 0b00000000;  	// portb bits 0,3,4 output; 1,2 in
+    DDRB = 0b00000000;
+    PORTB |= (1 << PB3);
+
     //DRAW GUI
     ssd1306_init();
     ssd1306tx_init(ssd1306xled_font6x8data, ' ');
@@ -42,6 +43,14 @@ void hardware_init(void){
     ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 0, "Set:");
 }
 
+/*--------------------PIN CHANGE INIT --------------------*/
+void pin_change_init(void){
+  GIMSK |= (1 << PCIE);
+  PCMSK |= (1 << PCINT3);
+  //PCMSK |= (1 << PCINT4);
+}
+
+
 /*--------------------TIMER INIT --------------------*/
 void timer1_init(void){
   TCCR0A = (1 << WGM01);             //CTC mode
@@ -50,36 +59,30 @@ void timer1_init(void){
   TIMSK |= (1<<OCIE0A);              //if you want interrupt
 }
 
-void pin_change_init(void){
-  GIMSK |= (1 << PCIE);
-  PCMSK |= (1 << PCINT3) | (1 << PCINT4);
-}
-
 
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\FUNCTIONS/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 /*--------------------TIMER INTERRUPT RUN--------------------*/
 ISR(TIMER0_COMPA_vect)
 {
   //1 second is 7*i
-  int seconds = 2;
+  int seconds = 5;
   i++;
   if(i > seconds * 7){
-    doIt = 1;
+    run_temp_get = 1;
     i = 0;
   }
 }
-
 /*--------------------PIN CHANGE INTERRUPT RAISE--------------------*/
 ISR(PCINT3_vect)
 {
-    set_temp = 12;             // Increment volatile variable
+  set_temp++;
 }
 
 /*--------------------PIN CHANGE INTERRUPT LOWER--------------------*/
-ISR(PCINT4_vect)
-{
-    set_temp--;             // Increment volatile variable
-}
+// ISR(PCINT4_vect)
+// {
+//   lower_temp = 1;
+// }
 
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\MAIN LOOP/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 int main (void)
@@ -92,11 +95,18 @@ int main (void)
 
   // temperature and humidity
   unsigned char ec; //Exit code
-	int temp, humid; //Temperature and humidity
+	int temp;
+  int humid;
   float temp_float, humid_float;
   char text[10];
   while(1){
-    if(doIt == 1){
+    //HANDLE TEMP SET
+    ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 2, itoa(set_temp, text, 10));
+    ssd1306tx_stringxy(ssd1306xled_font8x16data, 112, 2, "C");
+
+
+    //PRINT COLLECTED TEMP AND HUMIDITY
+    if(run_temp_get == 1){
       dhtxxconvert(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1));
       _delay_ms(1000);
       ec = dhtxxread(DHTXX_DHT22, &PORTB, &DDRB, &PINB,(1 << 1), &temp, &humid );
@@ -111,10 +121,7 @@ int main (void)
       //PRINT HUMID
       ssd1306tx_stringxy(ssd1306xled_font8x16data, 16, 2, dtostrf(humid_float, 4, 1, text));
       ssd1306tx_stringxy(ssd1306xled_font8x16data, 48, 2, "%");
-
-      //PRINT SET TEMP
-      ssd1306tx_stringxy(ssd1306xled_font8x16data, 96, 2, itoa(set_temp, text, 10));
-      ssd1306tx_stringxy(ssd1306xled_font8x16data, 112, 2, "C");
+      run_temp_get = 0;
     }
 
   }
